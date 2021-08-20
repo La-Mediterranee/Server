@@ -1,0 +1,50 @@
+
+
+retrieve porducts with category:
+db.collection("products").where("categories", "array-contains", category)
+
+## DB Collections
+/company
+    name: string
+    location: map = {
+        country: string
+        zip: string
+        adress: string
+    }
+    opening-hours: array
+    owner: string
+    logoSmall: string
+    logoBig: string
+
+/product-categories 
+    id = category name so we avoid duplication
+        subcollection: products
+
+/products 
+    sku(id): string;
+        name: string;
+        categories: string[] every category is an id   // or make every product belong to one category (string)
+        price: number;
+        orders: number; // added to get the 10 most ordered products as the most popular
+        reviews: map = {
+            value: number; // 1-5
+            count: number; // 400 reviews
+        } // or reviewsCount: number // increment on add with FieldValue.increment
+                reviewsValue: number // recalculate on every add (currentValue + new review/ reviewsCount)
+                reviews: map = {
+                user: map = {
+                    value: number 1-5
+                }
+            }
+
+/customers
+    uid: string;
+        StripeID: string;
+
+/orders
+
+
+// I don't think I will include reviews
+/reviews
+    id: productid (sku)
+        userID: id; // one time review or change this to a map and to include userID and rating

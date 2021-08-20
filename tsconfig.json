@@ -2,20 +2,23 @@
 	"compilerOptions": {
 		"module": "CommonJS",
 		"moduleResolution": "Node",
+		"rootDir": "./src",
+		"outDir": "dist",
 		"esModuleInterop": true,
 		"noImplicitReturns": true,
 		"noUnusedLocals": false,
 		"noImplicitAny": false,
-		"outDir": "dist",
 		"sourceMap": true,
 		"strict": true,
 		"target": "es2017",
 		"lib": ["ESNext"],
 		"strictNullChecks": true,
+		"importsNotUsedAsValues": "error",
+		"isolatedModules": true,
 		"baseUrl": "./",
 		"paths": {
 			"@config/*": ["src/config/*"],
-			"@util/*": ["src/util/*"],
+			"@utils/*": ["src/utils/*"],
 			"@routes/*": ["src/routes/*"]
 		}
 	},

@@ -6,6 +6,7 @@ declare namespace NodeJS {
 		readonly STRIPE_WEBHOOK_SECRET: string;
 		readonly GOOGLE_APPLICATION_CREDENTIALS: string;
 		readonly GOOGLE_STORAGE_BUCKET: string;
+		readonly HOSTNAME: string;
 	}
 
 	export interface ImportMetaEnv {
