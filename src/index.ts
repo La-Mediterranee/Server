@@ -1,13 +1,14 @@
 import Koa from 'koa';
 import json from 'koa-json';
-import bodyParser from 'koa-bodyparser';
 import Logger from 'koa-logger';
-import cors from '@koa/cors';
+import bodyParser from 'koa-bodyparser';
 import session, { opts } from 'koa-session';
+import cors from '@koa/cors';
 
 // import { createServer } from 'https';
 
 import router from './routes';
+
 const app = new Koa();
 const CONFIG: Partial<session.opts> = {
 	key: 'koa.sess' /** (string) cookie key (default is koa.sess) */,
@@ -33,7 +34,8 @@ app.use(session(CONFIG, app));
 app.use(async (ctx, next) => {
 	try {
 		await next();
-	} catch (err) {
+	} catch (error) {
+		const err = error as any;
 		err.expose = true;
 		err.status = err.statusCode || err.status || 500;
 		throw err;
@@ -42,7 +44,7 @@ app.use(async (ctx, next) => {
 
 app.use(Logger()).use(router.routes()).use(router.allowedMethods());
 
-app.listen(3000);
+app.listen(8080);
 
 // createServer(app.callback()).listen(5000);
 async function closeGracefully(signal: NodeJS.Signals) {

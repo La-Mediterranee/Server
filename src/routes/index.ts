@@ -8,6 +8,8 @@ import webhooksRoute from './webhooks';
 
 const router = new Router();
 
+import '../middleware/passport';
+
 // // Sessions
 // import session from 'koa-session';
 // app.keys = ['secret']
