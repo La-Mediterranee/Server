@@ -1,55 +1,48 @@
+import faker from 'faker';
 import Router from 'koa-router';
-import multer from '@koa/multer';
-import { extname } from 'path';
+
+import * as crypto from 'node:crypto';
 
 import { CDN_URL } from '@utils/consts';
 import { runAsync } from '@utils/helpers';
 import { stripe } from '@config/stripe';
-import { bucket, db } from '@config/firebase';
+import { db } from '@config/firebase';
 
-import type { Context } from 'koa';
+type SKU = string;
+type ID = string;
+
+export type Variations = DeepReadonly<{
+	toppings?: string[];
+}>;
+
+export interface Image {
+	readonly src: string;
+	readonly alt?: string;
+}
 
 interface Product {
-	name: string;
-	price: number;
-	image: {
-		src: string;
-		alt?: string;
+	readonly ID: ID;
+	readonly sku?: SKU;
+	readonly name: string;
+	readonly description: string;
+	readonly price: number;
+	readonly image: Image;
+	readonly categories: readonly string[];
+	readonly variations?: Variations | null;
+	readonly rating?: {
+		readonly value: number;
+		readonly count: number;
 	};
 }
-
-interface UploadProduct {
-	name: string;
-	price: number;
-	image: string;
-	category: string;
-}
-
-interface UploadImage {
-	file: multer.File;
-	name: string;
-	metadata?: Object;
-	type?: string;
-}
-
-const maxSize = 5 * 1024 * 1024;
-const upload = multer({
-	storage: multer.memoryStorage(),
-	limits: {
-		fileSize: maxSize
-	}
-});
 
 class ProductController {
 	static readonly categories = db.collection('product-categories');
 	// static readonly categories = db.collection('products');
 }
 
-const categories = db.collection('product-categories');
+const router = new Router();
 
-const router = new Router({
-	strict: true
-});
+export default router;
 
 router.get(
 	'/',
@@ -79,124 +72,37 @@ router.get('/categories/:category', async (ctx) => {
 	ctx.body = db.collection('products').doc(category).get();
 });
 
-router.post(
-	'/',
-	upload.single('image') as any,
-	runAsync(async (ctx) => {
-		if (!ctx.request.file) {
-			ctx.body = { message: 'Please upload a file!' };
-			ctx.status = 400;
-			return;
-		}
-		ctx.body = await createProduct(ctx);
-	})
-);
-
-router.post('/categories', async (ctx) => {
-	//
-	const data = {};
-	db.collection('products').doc(``).set(data, { merge: true });
-});
-
-router.delete('/:product', async (ctx) => {
-	const product = ctx.params.product;
-	// delte from database and delte image from storage
-});
-
-export default router;
-
-async function createProduct(ctx: Context | Router.IRouterContext) {
-	const product = (ctx.body as any).product as UploadProduct;
-	const file = ctx.request.file;
-	const extension = extname(file.originalname);
-
-	const image = await uploadImage({
-		name: `${product.name}${extension}`, //ctx.request.file.originalname
-		file: file
-	});
-
-	const upload: Product = {
-		name: product.name,
-		price: product.price,
-		image: {
-			src: image.cdnUrl || image.url
-		}
-	};
-
-	await db.collection('products').doc(`${product.category}`).collection('products').add(upload);
-}
-
 async function getProducts() {
-	return stripe.products.list();
+	const products: Product[] = Array(10)
+		.fill(0)
+		.map((_, i) => {
+			return {
+				ID: crypto.randomUUID(),
+				name: faker.commerce.productName(),
+				price: Number(faker.commerce.price(1, 20, 2)),
+				image: {
+					src: `${faker.image.imageUrl(undefined, undefined, 'food', true)}`,
+					alt: 'Food product'
+				},
+				categories: Array(randomIntFromInterval(1, 3)).map((v) =>
+					faker.commerce.department()
+				),
+				description: faker.commerce.productDescription(),
+				variations:
+					i % 2 === 0
+						? {
+								toppings: ['Beilagen', 'Saucen']
+						  }
+						: null
+			};
+		});
+
+	return products;
 }
 
 async function getProduct(id: string) {}
 
-async function getStripeProduct(id: string) {
-	return stripe.products.retrieve(id);
-}
-
-async function createStripeProduct(product: UploadProduct) {
-	try {
-		const productResponse = await stripe.products.create({
-			name: product.name,
-			images: [image.cdnUrl || image.url],
-			type: 'good'
-		});
-
-		const price = stripe.prices.create({
-			currency: 'eur',
-			unit_amount: product.price,
-			product: productResponse.id
-		});
-	} catch (error) {}
-}
-
-function uploadImage({ file, name, type, metadata = {} }: UploadImage): Promise<{
-	message: string;
-	url: string;
-	cdnUrl?: string;
-}> {
-	const blob = bucket.file(name);
-
-	const blobStream = blob.createWriteStream({
-		metadata: {
-			contentType: type || file.mimetype,
-			cacheControl: {
-				maxAge: 9999999
-			},
-			// alt,
-			...metadata
-		},
-		gzip: true,
-		public: true,
-		contentType: type || file.mimetype,
-		resumable: false
-	});
-
-	blobStream.end(file.buffer);
-
-	const url = `${CDN_URL}/images/${name}`;
-
-	return new Promise((resolve, reject) => {
-		blobStream.on('error', (err) => {
-			reject(err.message);
-		});
-
-		blobStream.on('finish', async () => {
-			// Create URL for directly file access via HTTP.
-			const publicUrl = `https://storage.googleapis.com/${bucket.name}/${name}`;
-			const cdnUrl = CDN_URL ? `https://${CDN_URL}/images/${blob.name}` : undefined;
-
-			resolve({
-				message: 'Uploaded the file successfully: ' + name,
-				url: publicUrl,
-				cdnUrl
-			});
-			// return {
-			// 	message: 'Uploaded the file successfully: ' + file.originalname,
-			// 	url: publicUrl
-			// };
-		});
-	});
+function randomIntFromInterval(min: number, max: number) {
+	// min and max included
+	return Math.floor(Math.random() * (max - min + 1) + min);
 }

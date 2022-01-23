@@ -2,11 +2,9 @@ import Router from 'koa-router';
 
 import authRouter from './auth';
 import userRouter from './user';
-import productsRouter from './user';
+import productsRouter from './products';
 import paymentsRouter from './buy';
 import webhooksRoute from './webhooks';
-
-const router = new Router();
 
 import '../middleware/passport';
 
@@ -22,10 +20,12 @@ import '../middleware/passport';
 // });
 // function sessionHandler(ctx, next) { sessionMiddleware(ctx, next); }
 
+const router = new Router();
+
 router.use('/auth', authRouter.routes(), authRouter.allowedMethods());
 router.use('/user', userRouter.routes(), userRouter.allowedMethods());
-router.use('/products', productsRouter.routes(), productsRouter.allowedMethods());
 router.use('/buy', paymentsRouter.routes(), paymentsRouter.allowedMethods());
+router.use('/products', productsRouter.routes(), productsRouter.allowedMethods());
 router.use('/webhooks', webhooksRoute.routes(), webhooksRoute.allowedMethods());
 
 export default router;

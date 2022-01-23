@@ -45,7 +45,7 @@ async function handleStripeWebhook(ctx: Context | IRouterContext) {
 		// res.send({ received: true });
 	} catch (err) {
 		console.error(err);
-		ctx.throw(400, `Webhook Error: ${err.message}`);
+		ctx.throw(400, `Webhook Error: ${(err as Error).message}`);
 		// res.status(400).send(`Webhook Error: ${err.message}`);
 	}
 }

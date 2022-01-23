@@ -5,8 +5,8 @@ import { auth, db } from '@config/firebase';
 import { discord } from 'src/utils/consts';
 
 import { signInFirebaseTemplateWithPostMessage } from 'src/utils/helpers';
+
 import type { Stripe } from 'stripe';
-import { stripe } from '@config/stripe';
 
 // import type { auth } from 'firebase-admin';
 

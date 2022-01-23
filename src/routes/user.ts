@@ -80,29 +80,25 @@ export async function listPaymentMethods(userId: string) {
  * Gets the exsiting Stripe customer or creates a new record
  */
 export async function getOrCreateCustomer(userId: string, params?: Stripe.CustomerCreateParams) {
-	try {
-		const userRecord = await auth.getUser(userId);
-		const email = userRecord.email;
-		const stripeCustomerId =
-			userRecord.customClaims && (userRecord.customClaims['stripeCustomerId'] as string);
+	const userRecord = await auth.getUser(userId);
+	const email = userRecord.email;
+	const stripeCustomerId =
+		userRecord.customClaims && (userRecord.customClaims['stripeCustomerId'] as string);
 
-		// If missing customerID, create it
-		if (!stripeCustomerId) {
-			// CREATE new customer
-			const customer = await stripe.customers.create({
-				email,
-				metadata: {
-					firebaseUID: userId
-				},
-				...params
-			});
-			await auth.setCustomUserClaims(userId, { stripeCustomerId: customer.id });
-			return customer;
-		} else {
-			return (await stripe.customers.retrieve(stripeCustomerId)) as Stripe.Customer;
-		}
-	} catch (error) {
-		return error;
+	// If missing customerID, create it
+	if (!stripeCustomerId) {
+		// CREATE new customer
+		const customer = await stripe.customers.create({
+			email,
+			metadata: {
+				firebaseUID: userId
+			},
+			...params
+		});
+		await auth.setCustomUserClaims(userId, { stripeCustomerId: customer.id });
+		return customer;
+	} else {
+		return (await stripe.customers.retrieve(stripeCustomerId)) as Stripe.Customer;
 	}
 }
 
