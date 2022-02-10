@@ -27,7 +27,7 @@ app.use(async (_, next) => {
 
 app.use(Logger()).use(router.routes()).use(router.allowedMethods());
 
-app.listen(8080, undefined, undefined, () => {
+app.listen(+process.env.PORT, undefined, undefined, () => {
 	console.log('listening');
 });
 
