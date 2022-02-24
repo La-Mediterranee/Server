@@ -1,4 +1,4 @@
-import faker from 'faker';
+import faker from '@faker-js/faker';
 import Router from 'koa-router';
 
 import * as crypto from 'node:crypto';
@@ -8,32 +8,7 @@ import { runAsync } from '@utils/helpers';
 import { stripe } from '@config/stripe';
 import { db } from '@config/firebase';
 
-type SKU = string;
-type ID = string;
-
-export type Variations = DeepReadonly<{
-	toppings?: string[];
-}>;
-
-export interface Image {
-	readonly src: string;
-	readonly alt?: string;
-}
-
-interface Product {
-	readonly ID: ID;
-	readonly sku?: SKU;
-	readonly name: string;
-	readonly description: string;
-	readonly price: number;
-	readonly image: Image;
-	readonly categories: readonly string[];
-	readonly variations?: Variations | null;
-	readonly rating?: {
-		readonly value: number;
-		readonly count: number;
-	};
-}
+import type { Product, Topping } from './products.types';
 
 class ProductController {
 	static readonly categories = db.collection('product-categories');
@@ -76,6 +51,7 @@ async function getProducts() {
 	const products: Product[] = Array(10)
 		.fill(0)
 		.map((_, i) => {
+			const toppings = i % 2 === 0 ? createToppings() : [];
 			return {
 				ID: crypto.randomUUID(),
 				name: faker.commerce.productName(),
@@ -88,19 +64,51 @@ async function getProducts() {
 					faker.commerce.department()
 				),
 				description: faker.commerce.productDescription(),
-				variations:
-					i % 2 === 0
-						? {
-								toppings: ['Beilagen', 'Saucen']
-						  }
-						: null
+				toppings: toppings,
+				variations: {
+					toppings: toppings
+				}
 			};
 		});
 
 	return products;
 }
 
-async function getProduct(id: string) {}
+function createToppings(): Topping[] {
+	return [createTopping('Sauce'), createTopping('Beilagen'), createTopping('Extra Beilagen', 0)];
+}
+
+function createTopping(name: string, qtyMin: number = 1): Topping {
+	return {
+		ID: crypto.randomUUID(),
+		name,
+		qtyMin,
+		qtyMax: 5,
+		options: [
+			{
+				ID: crypto.randomUUID(),
+				name: 'Mais',
+				desc: '',
+				price: 0
+			}
+		]
+	};
+}
+
+async function getProduct(id: string): Promise<Product> {
+	return {
+		ID: id,
+		name: 'Hamburger',
+		description: '',
+		price: 4.5,
+		categories: ['burger'],
+		image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
+		toppings: createToppings(),
+		variations: {
+			toppings: createToppings()
+		}
+	};
+}
 
 function randomIntFromInterval(min: number, max: number) {
 	// min and max included
