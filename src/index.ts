@@ -1,18 +1,30 @@
 import Koa from 'koa';
-import json from 'koa-json';
-import Logger from 'koa-logger';
-import bodyParser from 'koa-bodyparser';
-import session from 'koa-session';
-import cors from '@koa/cors';
+import Fastify from 'fastify';
 
+import cors from '@koa/cors';
+import fastifyCors from 'fastify-cors';
+
+import logger from 'koa-logger';
+import bodyParser from 'koa-body';
+import fetch from 'node-fetch';
 // import { createServer } from 'https';
 
-import router from './routes';
+import router, { routes } from './routes/index.js';
+
+export const fastify = Fastify({
+	logger: true,
+	trustProxy: true,
+});
+
+fastify.register(fastifyCors);
+fastify.register(routes, { prefix: 'v1' });
 
 const app = new Koa();
 
+//@ts-ignore
+globalThis.fetch = fetch;
+
 app.use(cors());
-app.use(json());
 app.use(bodyParser());
 app.use(async (_, next) => {
 	try {
@@ -25,14 +37,22 @@ app.use(async (_, next) => {
 	}
 });
 
-app.use(Logger()).use(router.routes()).use(router.allowedMethods());
+app.use(logger()).use(router.routes()).use(router.allowedMethods());
 
 app.listen(+process.env.PORT, undefined, undefined, () => {
-	console.log('listening');
+	console.log(`Server is now listening on localhost:${process.env.PORT}`);
 });
 
+try {
+	const address = await fastify.listen(+process.env.PORT);
+	console.log(`Server is now listening on ${address}`);
+} catch (err) {
+	fastify.log.error(err);
+	closeGracefully();
+}
+
 // createServer(app.callback()).listen(5000);
-async function closeGracefully(signal: NodeJS.Signals) {
+async function closeGracefully(signal?: NodeJS.Signals) {
 	console.log(`=> Received signal to terminate: ${signal}`);
 
 	app.removeAllListeners();

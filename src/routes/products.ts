@@ -1,12 +1,11 @@
 import faker from '@faker-js/faker';
+import type { FastifyPluginAsync } from 'fastify';
 import Router from 'koa-router';
 
 import * as crypto from 'node:crypto';
 
-import { CDN_URL } from '@utils/consts';
-import { runAsync } from '@utils/helpers';
-import { stripe } from '@config/stripe';
-import { db } from '@config/firebase';
+import { db } from '../config/firebase.js';
+import { runAsync } from '../utils/helpers.js';
 
 import type { Product, Topping } from './products.types';
 
@@ -16,6 +15,31 @@ class ProductController {
 }
 
 const router = new Router();
+
+export const productsRouter: FastifyPluginAsync = async (app, opts) => {
+	app.get('/', async () => {
+		return await getProducts();
+	});
+
+	app.get<{
+		Params: { product: string };
+	}>('/:product', async (req) => {
+		const product = req.params.product;
+		return await getProduct(product);
+	});
+
+	app.get('/categories', async (req) => {
+		return db.collection('products').get();
+	});
+
+	app.get<{
+		Params: { category: string };
+	}>('/categories/:category', async (ctx) => {
+		//
+		const category = ctx.params.category;
+		return db.collection('products').doc(category).get();
+	});
+};
 
 export default router;
 
@@ -57,8 +81,13 @@ async function getProducts() {
 				name: faker.commerce.productName(),
 				price: Number(faker.commerce.price(1, 20, 2)),
 				image: {
-					src: `${faker.image.imageUrl(undefined, undefined, 'food', true)}`,
-					alt: 'Food product'
+					src: `${faker.image.imageUrl(
+						undefined,
+						undefined,
+						'food',
+						true
+					)}`,
+					alt: 'Food product',
 				},
 				categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 					faker.commerce.department()
@@ -66,8 +95,8 @@ async function getProducts() {
 				description: faker.commerce.productDescription(),
 				toppings: toppings,
 				variations: {
-					toppings: toppings
-				}
+					toppings: toppings,
+				},
 			};
 		});
 
@@ -75,7 +104,11 @@ async function getProducts() {
 }
 
 function createToppings(): Topping[] {
-	return [createTopping('Sauce'), createTopping('Beilagen'), createTopping('Extra Beilagen', 0)];
+	return [
+		createTopping('Sauce'),
+		createTopping('Beilagen'),
+		createTopping('Extra Beilagen', 0),
+	];
 }
 
 function createTopping(name: string, qtyMin: number = 1): Topping {
@@ -89,9 +122,9 @@ function createTopping(name: string, qtyMin: number = 1): Topping {
 				ID: crypto.randomUUID(),
 				name: 'Mais',
 				desc: '',
-				price: 0
-			}
-		]
+				price: 0,
+			},
+		],
 	};
 }
 
@@ -105,8 +138,8 @@ async function getProduct(id: string): Promise<Product> {
 		image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
 		toppings: createToppings(),
 		variations: {
-			toppings: createToppings()
-		}
+			toppings: createToppings(),
+		},
 	};
 }
 

@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"module": "CommonJS",
+		"module": "ESNext",
 		"moduleResolution": "Node",
 		"rootDir": "./src",
 		"outDir": "dist",
@@ -24,7 +24,8 @@
 	},
 	"compileOnSave": true,
 	"ts-node": {
-		"files": true
+		"files": true,
+		"esm": true
 	},
 	"files": ["src/index.ts", "src/global.d.ts"],
 	"include": ["./src"]

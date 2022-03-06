@@ -2,21 +2,20 @@ import crypto from 'crypto';
 import Router from 'koa-router';
 import base64url from 'base64url';
 
-import { auth, db } from '@config/firebase';
-import { ORIGIN } from '@utils/consts';
+import { auth, db } from '../config/firebase.js';
+import { ORIGIN } from '../utils/consts.js';
 
-import type { Next, ParameterizedContext } from 'koa';
 import {
 	generateServerGetAssertion,
 	generateServerMakeCredRequest,
 	randomBase64URLBuffer,
 	verifyAuthenticatorAssertionResponse,
-	verifyAuthenticatorAttestationResponse
-} from '@utils/webauthn-utils';
+	verifyAuthenticatorAttestationResponse,
+} from '../utils/webauthn-utils.js';
 
-const router = new Router({
-	strict: true
-});
+import type { Next, ParameterizedContext } from 'koa';
+
+const router = new Router();
 
 const database = {};
 
@@ -24,7 +23,7 @@ router.post('/register', async (ctx) => {
 	if (!ctx.body || !ctx.body.username || !ctx.body.name) {
 		ctx.body = {
 			status: 'failed',
-			message: 'Request missing name or username field!'
+			message: 'Request missing name or username field!',
 		};
 		return;
 	}
@@ -35,7 +34,7 @@ router.post('/register', async (ctx) => {
 	if (database[username] && database[username].registered) {
 		ctx.body = {
 			status: 'failed',
-			message: `Username ${username} already exists`
+			message: `Username ${username} already exists`,
 		};
 		return;
 	}
@@ -43,11 +42,15 @@ router.post('/register', async (ctx) => {
 	database[username] = {
 		name: name,
 		registered: false,
-		id: randomBase64URLBuffer(),
-		authenticators: []
+		id: randomBase64URLBuffer(16),
+		authenticators: [],
 	};
 
-	let challengeMakeCred = generateServerMakeCredRequest(username, name, database[username].id);
+	let challengeMakeCred = generateServerMakeCredRequest(
+		username,
+		name,
+		database[username].id
+	);
 
 	challengeMakeCred.status = 'ok';
 
@@ -64,7 +67,7 @@ router.post('/login', (ctx, next) => {
 	if (!ctx.body || !ctx.body.username) {
 		ctx.body = {
 			status: 'failed',
-			message: 'Request missing username field!'
+			message: 'Request missing username field!',
 		};
 
 		return;
@@ -75,13 +78,16 @@ router.post('/login', (ctx, next) => {
 	if (!database[username] || !database[username].registered) {
 		ctx.body = {
 			status: 'failed',
-			message: `User ${username} does not exist!`
+			message: `User ${username} does not exist!`,
 		};
 
 		return;
 	}
 
-	let getAssertion = generateServerGetAssertion(database[username].authenticators);
+	let getAssertion = generateServerGetAssertion(
+		database[username].authenticators
+	);
+	//@ts-ignore
 	getAssertion.status = 'ok';
 
 	if (ctx.session) {
@@ -104,20 +110,22 @@ router.post('/response', (ctx, response) => {
 		ctx.body = {
 			status: 'failed',
 			message:
-				'Response missing one or more of id/rawId/response/type fields, or type is not public-key!'
+				'Response missing one or more of id/rawId/response/type fields, or type is not public-key!',
 		};
 
 		return;
 	}
 
 	const webauthnResp = ctx.body;
-	const clientData = JSON.parse(base64url.decode(webauthnResp.response.clientDataJSON));
+	const clientData = JSON.parse(
+		base64url.decode(webauthnResp.response.clientDataJSON)
+	);
 
 	/* Check challenge... */
 	if (clientData.challenge !== ctx.session?.challenge) {
 		ctx.body = {
 			status: 'failed',
-			message: "Challenges don't match!"
+			message: "Challenges don't match!",
 		};
 	}
 
@@ -125,7 +133,7 @@ router.post('/response', (ctx, response) => {
 	if (clientData.origin !== ORIGIN) {
 		ctx.body = {
 			status: 'failed',
-			message: "Origins don't match!"
+			message: "Origins don't match!",
 		};
 	}
 
@@ -135,7 +143,9 @@ router.post('/response', (ctx, response) => {
 		result = verifyAuthenticatorAttestationResponse(webauthnResp);
 
 		if (result.verified) {
-			database[ctx.session?.username].authenticators.push(result.authrInfo);
+			database[ctx.session?.username].authenticators.push(
+				result.authrInfo
+			);
 			database[ctx.session?.username].registered = true;
 		}
 	} else if (webauthnResp.response.authenticatorData !== undefined) {
@@ -147,7 +157,7 @@ router.post('/response', (ctx, response) => {
 	} else {
 		ctx.body = {
 			status: 'failed',
-			message: 'Can not determine type of response!'
+			message: 'Can not determine type of response!',
 		};
 	}
 
@@ -156,12 +166,12 @@ router.post('/response', (ctx, response) => {
 			ctx.session!.loggedIn = true;
 			ctx.body = { status: 'ok' };
 		} catch (error) {
-			ctx.throw(500, error);
+			ctx.throw(500, <string>error);
 		}
 	} else {
 		ctx.body = {
 			status: 'failed',
-			message: 'Can not authenticate signature!'
+			message: 'Can not authenticate signature!',
 		};
 	}
 });

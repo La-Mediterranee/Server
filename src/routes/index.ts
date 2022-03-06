@@ -1,12 +1,14 @@
 import Router from 'koa-router';
 
-import authRouter from './auth';
-import userRouter from './user';
-import productsRouter from './products';
-import paymentsRouter from './buy';
-import webhooksRoute from './webhooks';
+import auth, { authRouter } from './auth.js';
+import user from './user.js';
+import products, { productsRouter } from './products.js';
+import payments from './buy.js';
+import webhooks from './webhooks.js';
 
-import '../middleware/passport';
+import '../middleware/passport.js';
+
+import type { FastifyPluginAsync } from 'fastify';
 
 // // Sessions
 // import session from 'koa-session';
@@ -20,12 +22,20 @@ import '../middleware/passport';
 // });
 // function sessionHandler(ctx, next) { sessionMiddleware(ctx, next); }
 
+export const routes: FastifyPluginAsync = async (app) => {
+	app.register(authRouter, { prefix: '/auth' });
+	app.register(() => {}, { prefix: '/user' });
+	app.register(() => {}, { prefix: '/buy' });
+	app.register(productsRouter, { prefix: '/products' });
+	app.register(() => {}, { prefix: '/webhooks' });
+};
+
 const router = new Router();
 
-router.use('/auth', authRouter.routes(), authRouter.allowedMethods());
-router.use('/user', userRouter.routes(), userRouter.allowedMethods());
-router.use('/buy', paymentsRouter.routes(), paymentsRouter.allowedMethods());
-router.use('/products', productsRouter.routes(), productsRouter.allowedMethods());
-router.use('/webhooks', webhooksRoute.routes(), webhooksRoute.allowedMethods());
+router.use('/auth', auth.routes(), auth.allowedMethods());
+router.use('/user', user.routes(), user.allowedMethods());
+router.use('/buy', payments.routes(), payments.allowedMethods());
+router.use('/products', products.routes(), products.allowedMethods());
+router.use('/webhooks', webhooks.routes(), webhooks.allowedMethods());
 
 export default router;
