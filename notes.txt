@@ -6,42 +6,62 @@ db.collection("products").where("categories", "array-contains", category)
 ## DB Collections
 /company
     name: string
-    location: map = {
+    address: map = {
         country: string
+        street: string
+        city: string;
         zip: string
-        adress: string
     }
     opening-hours: array
     owner: string
-    logoSmall: string
-    logoBig: string
+    logo: {
+        small: string;
+        big: string;
+    }
 
-/product-categories 
+/food 
     id = category name so we avoid duplication
         subcollection: products
 
 /products 
-    sku(id): string;
-        name: string;
-        categories: string[] every category is an id   // or make every product belong to one category (string)
-        price: number;
-        orders: number; // added to get the 10 most ordered products as the most popular
+    ID: string;
+    price: number;
+    translations: {
+        [lang]: {
+            name: string;
+            desc: string;
+        } 
+    }
+    orders: number; // added to get the 10 most ordered products as the most popular
+    tags: string[] every category is an id   // or make every product belong to one category (string)
+    
+    /*
+    reviews: map = {
+        value: number; // 1-5 // increment on add with FieldValue.increment
+        count: number; // 400 reviews  // recalculate on every add (currentValue + new review/ reviewsCount),
         reviews: map = {
-            value: number; // 1-5
-            count: number; // 400 reviews
-        } // or reviewsCount: number // increment on add with FieldValue.increment
-                reviewsValue: number // recalculate on every add (currentValue + new review/ reviewsCount)
-                reviews: map = {
-                user: map = {
-                    value: number 1-5
-                }
-            }
+            userID: value: number 1-5
+        }
+    } 
+    */
 
 /customers
+    customClaims: {
+        stripeID: string;
+    }
+
     uid: string;
-        StripeID: string;
 
 /orders
+    ID: string;
+    timestamp: timestamp;
+    user: User;
+    lineItems: [{
+        ID: string;
+        name: string;
+        toppings: ToppingOption[]
+        itemTotal: 
+    }]
 
 
 // I don't think I will include reviews
