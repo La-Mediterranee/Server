@@ -1,4 +1,4 @@
-import Router from 'koa-router';
+import * as Router from 'koa-router';
 
 import { stripe } from '../config/stripe.js';
 import { runAsync } from '../utils/helpers.js';
@@ -12,20 +12,17 @@ import type { FastifyPluginAsync } from 'fastify';
 export const router = new Router();
 
 export const webhooksRouter: FastifyPluginAsync = async (app) => {
-	app.addContentTypeParser(
-		'application/json',
-		{ parseAs: 'buffer' },
-		async (req, payload, done) => {
-			try {
-				done(null, {
-					raw: payload,
-					json: JSON.parse(payload.toString()),
-				});
-			} catch (err) {
-				return err;
-			}
+	// app.decorateRequest('rawBody', undefined);
+	app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (_, payload, done) => {
+		try {
+			done(null, {
+				raw: payload,
+				json: JSON.parse(payload.toString())
+			});
+		} catch (err) {
+			return err;
 		}
-	);
+	});
 
 	app.post<{
 		Headers: {
@@ -36,16 +33,12 @@ export const webhooksRouter: FastifyPluginAsync = async (app) => {
 		};
 	}>('/stripe', async (req, res) => {
 		const sig = req.headers['stripe-signature'];
-		const event = stripe.webhooks.constructEvent(
-			req.body.raw,
-			sig,
-			STRIPE_WEBHOOK_SECRET
-		);
+		const event = stripe.webhooks.constructEvent(req.body.raw, sig, STRIPE_WEBHOOK_SECRET);
 
 		try {
 			await webhookHandlers[event.type](event.data.object);
 			return {
-				received: true,
+				received: true
 			};
 			// res.send({ received: true });
 		} catch (err) {
@@ -72,7 +65,7 @@ const webhookHandlers = {
 	},
 	'payment_intent.payment_failed': async (_data: Stripe.PaymentIntent) => {
 		// Add your business logic here
-	},
+	}
 };
 
 /**
@@ -80,16 +73,12 @@ const webhookHandlers = {
  */
 async function handleStripeWebhook(ctx: Context | IRouterContext) {
 	const sig = ctx.headers['stripe-signature'] as string;
-	const event = stripe.webhooks.constructEvent(
-		ctx.request.rawBody,
-		sig,
-		STRIPE_WEBHOOK_SECRET
-	); // ctx['rawBody']
+	const event = stripe.webhooks.constructEvent(ctx.request.rawBody, sig, STRIPE_WEBHOOK_SECRET); // ctx['rawBody']
 
 	try {
 		await webhookHandlers[event.type](event.data.object);
 		ctx.body = {
-			received: true,
+			received: true
 		};
 		// res.send({ received: true });
 	} catch (err) {

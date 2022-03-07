@@ -1,33 +1,21 @@
-import Router from 'koa-router';
+import * as Router from 'koa-router';
 
 import auth, { authRouter } from './auth.js';
-import user from './user.js';
+import user, { userRouter } from './user.js';
 import products, { productsRouter } from './products.js';
-import payments from './buy.js';
-import webhooks from './webhooks.js';
+import payments, { paymentsRouter } from './buy.js';
+import webhooks, { webhooksRouter } from './webhooks.js';
 
 import '../middleware/passport.js';
 
 import type { FastifyPluginAsync } from 'fastify';
 
-// // Sessions
-// import session from 'koa-session';
-// app.keys = ['secret']
-// app.use(session({}, app))
-// app.use(passport.session())
-
-// Sessions for specific routes
-// const sessionMiddleware = session({
-//     //session configurations
-// });
-// function sessionHandler(ctx, next) { sessionMiddleware(ctx, next); }
-
 export const routes: FastifyPluginAsync = async (app) => {
 	app.register(authRouter, { prefix: '/auth' });
-	app.register(() => {}, { prefix: '/user' });
-	app.register(() => {}, { prefix: '/buy' });
+	app.register(userRouter, { prefix: '/user' });
+	app.register(paymentsRouter, { prefix: '/buy' });
 	app.register(productsRouter, { prefix: '/products' });
-	app.register(() => {}, { prefix: '/webhooks' });
+	app.register(webhooksRouter, { prefix: '/webhooks' });
 };
 
 const router = new Router();

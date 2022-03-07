@@ -1,68 +1,76 @@
-import Koa from 'koa';
-import Fastify from 'fastify';
+import { pathToFileURL } from 'node:url';
+import fetch from 'node-fetch';
 
-import cors from '@koa/cors';
+import Fastify from 'fastify';
+import fastifyAuth from 'fastify-auth';
 import fastifyCors from 'fastify-cors';
 
-import logger from 'koa-logger';
-import bodyParser from 'koa-body';
-import fetch from 'node-fetch';
+// import Koa from 'koa';
+// import cors from '@koa/cors';
+// import logger from 'koa-logger';
+// import bodyParser from 'koa-body';
 // import { createServer } from 'https';
 
 import router, { routes } from './routes/index.js';
 
-export const fastify = Fastify({
-	logger: true,
-	trustProxy: true,
-});
-
-fastify.register(fastifyCors);
-fastify.register(routes, { prefix: 'v1' });
-
-const app = new Koa();
-
 //@ts-ignore
 globalThis.fetch = fetch;
 
-app.use(cors());
-app.use(bodyParser());
-app.use(async (_, next) => {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+	main();
+}
+
+async function main() {
+	const fastify = Fastify({
+		logger: true,
+		trustProxy: true
+	});
+
+	fastify.register(fastifyCors, {});
+	fastify.register(fastifyAuth);
+	fastify.register(routes, { prefix: 'v1' });
+
 	try {
-		await next();
-	} catch (error) {
-		const err = error as any;
-		err.expose = true;
-		err.status = err.statusCode || err.status || 500;
-		throw err;
+		const address = await fastify.listen(+process.env.PORT);
+		console.log(`Server is now listening on ${address}`);
+	} catch (err) {
+		fastify.log.error(err);
+		closeGracefully();
 	}
-});
 
-app.use(logger()).use(router.routes()).use(router.allowedMethods());
+	// const app = new Koa();
+	// app.use(cors());
+	// app.use(bodyParser());
+	// app.use(async (_, next) => {
+	// 	try {
+	// 		await next();
+	// 	} catch (error) {
+	// 		const err = error as any;
+	// 		err.expose = true;
+	// 		err.status = err.statusCode || err.status || 500;
+	// 		throw err;
+	// 	}
+	// });
 
-app.listen(+process.env.PORT, undefined, undefined, () => {
-	console.log(`Server is now listening on localhost:${process.env.PORT}`);
-});
+	// app.use(logger()).use(router.routes()).use(router.allowedMethods());
 
-try {
-	const address = await fastify.listen(+process.env.PORT);
-	console.log(`Server is now listening on ${address}`);
-} catch (err) {
-	fastify.log.error(err);
-	closeGracefully();
+	// app.listen(+process.env.PORT, undefined, undefined, () => {
+	// 	console.log(`Server is now listening on localhost:${process.env.PORT}`);
+	// });
+
+	// createServer(app.callback()).listen(5000);
+	async function closeGracefully(signal?: NodeJS.Signals) {
+		console.log(`=> Received signal to terminate: ${signal}`);
+
+		// app.removeAllListeners();
+		// await db.close() if we have a db connection in this app
+		// await other things we should cleanup nicely
+		process.exit();
+	}
+
+	process.on('SIGINT', closeGracefully);
+	process.on('SIGTERM', closeGracefully);
 }
-
-// createServer(app.callback()).listen(5000);
-async function closeGracefully(signal?: NodeJS.Signals) {
-	console.log(`=> Received signal to terminate: ${signal}`);
-
-	app.removeAllListeners();
-	// await db.close() if we have a db connection in this app
-	// await other things we should cleanup nicely
-	process.exit();
-}
-
-process.on('SIGINT', closeGracefully);
-process.on('SIGTERM', closeGracefully);
 
 // const CONFIG: Partial<session.opts> = {
 // 	key: 'koa.sess' /** (string) cookie key (default is koa.sess) */,

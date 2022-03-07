@@ -45,6 +45,7 @@ export function validateUser(ctx: Context | IRouterContext) {
 
 	return user;
 }
+
 async function deleteCollection(db, collectionPath, batchSize) {
 	const collectionRef = db.collection(collectionPath);
 	const query = collectionRef.orderBy('__name__').limit(batchSize);
