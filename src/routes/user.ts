@@ -1,4 +1,5 @@
-import * as Router from 'koa-router';
+//@ts-ignore
+import { default as Router } from 'koa-router';
 
 import { auth, db } from '../config/firebase.js';
 import { stripe } from '../config/stripe.js';
@@ -14,12 +15,12 @@ declare module 'fastify' {
 }
 
 export const userRouter: FastifyPluginAsync = async (app, opts) => {
-	app.addHook(
-		'preHandler',
-		app.auth([
-			// decodetoken and validateUser(req)
-		])
-	);
+	// app.addHook(
+	// 	'preHandler',
+	// 	app.auth([
+	// 		// decodetoken and validateUser(req)
+	// 	])
+	// );
 
 	app.get('/wallet', async (req) => {
 		const customer = req.user!!;
@@ -69,7 +70,7 @@ export async function createSetupIntent(customerId: string) {
 	const customer = await getOrCreateCustomer(customerId);
 
 	return stripe.setupIntents.create({
-		customer: customer.id
+		customer: customer.id,
 	});
 }
 
@@ -82,34 +83,38 @@ export async function listPaymentMethods(userId: string) {
 	const methods = await Promise.all([
 		stripe.paymentMethods.list({
 			customer: customer.id,
-			type: 'sofort'
+			type: 'sofort',
 		}),
 		stripe.paymentMethods.list({
 			customer: customer.id,
-			type: 'card'
-		})
+			type: 'card',
+		}),
 	]).then((r) => r.map((s) => s.data));
 
 	return [
 		{
 			type: 'sofort',
-			data: methods[0]
+			data: methods[0],
 		},
 		{
 			type: 'cards',
-			data: methods[1]
-		}
+			data: methods[1],
+		},
 	];
 }
 
 /**
  * Gets the exsiting Stripe customer or creates a new record
  */
-export async function getOrCreateCustomer(userId: string, params?: Stripe.CustomerCreateParams) {
+export async function getOrCreateCustomer(
+	userId: string,
+	params?: Stripe.CustomerCreateParams
+) {
 	const userRecord = await auth.getUser(userId);
 	const email = userRecord.email;
 	const stripeCustomerId =
-		userRecord.customClaims && (userRecord.customClaims['stripeCustomerId'] as string);
+		userRecord.customClaims &&
+		(userRecord.customClaims['stripeCustomerId'] as string);
 
 	// If missing customerID, create it
 	if (!stripeCustomerId) {
@@ -117,16 +122,18 @@ export async function getOrCreateCustomer(userId: string, params?: Stripe.Custom
 		const customer = await stripe.customers.create({
 			email,
 			metadata: {
-				firebaseUID: userId
+				firebaseUID: userId,
 			},
-			...params
+			...params,
 		});
 		await auth.setCustomUserClaims(userId, {
-			stripeCustomerId: customer.id
+			stripeCustomerId: customer.id,
 		});
 		return customer;
 	} else {
-		return (await stripe.customers.retrieve(stripeCustomerId)) as Stripe.Customer;
+		return (await stripe.customers.retrieve(
+			stripeCustomerId
+		)) as Stripe.Customer;
 	}
 }
 

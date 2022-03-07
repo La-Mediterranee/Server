@@ -1,10 +1,12 @@
-import { auth } from '@config/firebase';
+import { auth } from '../config/firebase.js';
 
 // Types
 import type { Next, Context } from 'koa';
 import type { IRouterContext } from 'koa-router';
 
-export function runAsync<T>(cb: (ctx: Context | IRouterContext, next?: Next) => Promise<T>) {
+export function runAsync<T>(
+	cb: (ctx: Context | IRouterContext, next?: Next) => Promise<T>
+) {
 	return (ctx: Context | IRouterContext, next: Next) => {
 		cb(ctx, next).catch(next);
 	};
@@ -110,6 +112,7 @@ export function signInFirebaseTemplateWithPostMessage(
 					width: 100%;
 					min-height: 100vh;
 				}
+
 				div {
 					position: relative;
 				}
@@ -137,16 +140,17 @@ export function signInFirebaseTemplateWithPostMessage(
 		<body>
 			<div>
 				<video autoplay loop muted playsinline>
+					<!-- src="https://discord.com/assets/3b0d96ed8113994f3d139088726cfecd.webm"-->
 					<source
-						src="https://discord.com/assets/3b0d96ed8113994f3d139088726cfecd.webm"
 						type="video/webm"
+						src="http://localhost:3000/discord.webm"
 					/>
 					<img
 						decoding="async"
 						src="https://cdn.discordapp.com/attachments/414258067870449665/445736475158380544/discord.gif"
 						alt="Spinning Discord Logo"
 					/>
-				</video>
+					</video>
 				<h2>Logging in</h2>
 			</div>
 			<script>

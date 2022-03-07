@@ -1,4 +1,6 @@
-import * as passport from 'koa-passport';
+//@ts-ignore
+import { default as passport } from 'koa-passport';
+
 import fastifyPassport from 'fastify-passport';
 import { Strategy as DiscordStrategy } from 'passport-discord';
 
@@ -25,7 +27,7 @@ fastifyPassport.use(
 			clientID: discord.clientID,
 			clientSecret: discord.clientSecret,
 			callbackURL: discord.redirectURL,
-			scope: discord.scopes
+			scope: discord.scopes,
 		},
 		async function (accessToken, refreshToken, profile, done) {
 			return done(null, profile);
@@ -49,7 +51,7 @@ passport.use(
 			clientID: discord.clientID,
 			clientSecret: discord.clientSecret,
 			callbackURL: discord.redirectURL,
-			scope: discord.scopes
+			scope: discord.scopes,
 		},
 		async function (accessToken, refreshToken, profile, done) {
 			return done(null, profile);

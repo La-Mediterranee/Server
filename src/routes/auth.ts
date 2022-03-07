@@ -1,15 +1,20 @@
-import Router from 'koa-router';
-import passport from 'koa-passport';
+import * as path from 'node:path';
+import { readFileSync } from 'node:fs';
+//@ts-ignore
+import { default as Router } from 'koa-router';
+//@ts-ignore
+import { default as passport, Passport, use } from 'koa-passport';
 import fastifyPassport from 'fastify-passport';
+import fastifySecureSession from 'fastify-secure-session';
+import { Strategy as DiscordStrategy } from 'passport-discord';
 
 import { discord } from '../utils/consts.js';
 import { auth, db } from '../config/firebase.js';
 
-import { signInFirebaseTemplateWithPostMessage } from 'src/utils/helpers';
+import { signInFirebaseTemplateWithPostMessage } from '../utils/helpers.js';
 
 import type { Stripe } from 'stripe';
 import type { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
-
 // import type { auth } from 'firebase-admin';
 
 interface LoginQuery {
@@ -19,15 +24,62 @@ interface LoginQuery {
 interface OAuthUser {
 	id: string;
 	provider: string;
-	[key: string]: string;
+	email: string;
+	username: string;
+	[key: string]: number | string | null;
 }
 
 const router = new Router();
 
+// import '../middleware/passport.js';
+
 export const authRouter: FastifyPluginAsync = async (app, opts) => {
+	app.register(fastifySecureSession, {
+		key: readFileSync(path.join(process.cwd(), 'secret-key')),
+	});
+
 	app.register(fastifyPassport.initialize());
+	app.register(fastifyPassport.secureSession());
+
+	fastifyPassport.registerUserDeserializer(async (user, request) => {
+		console.log('user', user);
+		return (user as any).uid;
+	});
+
+	fastifyPassport.registerUserDeserializer(async (uid, request) => {
+		console.log('uid', uid);
+		return uid;
+	});
+
+	fastifyPassport.use(
+		'discord',
+		new DiscordStrategy(
+			{
+				clientID: discord.clientID,
+				clientSecret: discord.clientSecret,
+				callbackURL: discord.redirectURL,
+				scope: discord.scopes,
+			},
+			async function (accessToken, refreshToken, profile, done) {
+				return done(null, profile);
+			}
+		)
+	);
+
+	const supportedProviders = new Set(['discord']);
+
+	interface DiscordUser extends OAuthUser {
+		avatar: string | null;
+		discriminator: string;
+	}
+
+	// app.get('/', async (req, res) => {
+	// 	res.header('Content-type', 'text/html');
+	// 	return signInFirebaseTemplateWithPostMessage('', '', '', '');
+	// });
 
 	app.get<{
+		Params: { provider: string };
 		Querystring: OAuthUser;
 	}>(
 		'/handler/:provider',
@@ -37,48 +89,96 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 			}),
 		},
 		async (req, res) => {
-			try {
-				const user = req.query;
-				const uid = user.id;
-				const token = await auth.createCustomToken(uid);
-				const photoURL = !user.avatar
-					? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=96x96`
-					: `https://cdn.discordapp.com/embed/avatars/${user.discriminator}.png?size=96x96`;
-
-				res.header('Content-type', 'text/html');
-				return signInFirebaseTemplateWithPostMessage(
-					token,
-					user.email,
-					user.username,
-					photoURL
+			if (!supportedProviders.has(req.params.provider)) {
+				throw app.httpErrors.unprocessableEntity(
+					`Selected Provider not supported.\n` +
+						`Supported Providers: ${[...supportedProviders].join(
+							','
+						)}`
 				);
-			} catch (error) {
-				console.error(error);
-				return new Error(`Error with Auth the handler`);
 			}
+
+			const user = <any>req.user;
+			let photoURL = '';
+			let token = '';
+
+			switch (req.params.provider) {
+				case 'discord':
+					try {
+						const user = <DiscordUser>(<unknown>req.user);
+						const uid = user.id;
+						photoURL =
+							user.avatar !== null
+								? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=96x96`
+								: `https://cdn.discordapp.com/embed/avatars/${user.discriminator}.png?size=96x96`;
+						try {
+							await auth.updateUser(uid, {
+								photoURL,
+								email: user.email,
+								displayName: user.username,
+							});
+						} catch (_e) {
+							if ((<any>_e).code === 'auth/user-not-found') {
+								await auth.createUser({
+									uid,
+									photoURL,
+									email: user.email,
+									displayName: user.username,
+								});
+							}
+						}
+
+						token = await auth.createCustomToken(uid, {
+							locale: user.locale,
+						});
+					} catch (error) {
+						console.error(error);
+						return new Error(`Error with Auth the handler`);
+					}
+					break;
+			}
+
+			res.header('Content-type', 'text/html');
+			return signInFirebaseTemplateWithPostMessage(
+				token,
+				user.email,
+				user.username,
+				photoURL
+			);
 		}
 	);
 
+	// Object.create(null, {
+	// 	discord: callback
+	// })
+
 	app.get<{
 		Querystring: { provider: string };
-	}>('/login', async (res, req) => {
-		const query = res.query;
+	}>('/login', async (req, res) => {
+		const query = req.query;
 		const provider = query.provider;
 
 		switch (provider) {
 			case 'discord':
-				//@ts-ignore
-				fastifyPassport.authenticate('discord', {
+				const cb = fastifyPassport.authenticate(['discord'], {
 					scope: discord.scopes,
 					session: false,
-					state: 'discord',
-				})(req, res);
-				break;
+				});
+
+				// ts complaints that is doesn't have access to `this`
+				// because of the typedefinition
+				await cb.apply(app, [req, res]);
+
+				return;
 			case 'steam':
-				break;
+				return 'not implemented right now';
 			default:
-				req.code(502);
-				throw `Provider not supported`;
+				throw app.httpErrors.unprocessableEntity(
+					`Selected Provider not supported.\n` +
+						`Supported Providers: ${[...supportedProviders].join(
+							','
+						)}`
+				);
 		}
 	});
 
@@ -86,17 +186,23 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 		Body: { idToken: string; locale: string };
 	}>('/session', async (req, res) => {
 		const { idToken, locale } = req.body;
-		const decodedIdToken = await auth.verifyIdToken(idToken);
+		try {
+			const decodedIdToken = await auth.verifyIdToken(idToken);
+			// Only process if the user just signed in in the last 5 minutes.
+			if (
+				new Date().getTime() / 1000 - decodedIdToken.auth_time >
+				5 * 60
+			) {
+				res.code(401);
+				throw 'Recent sign in required!';
+			}
 
-		// Only process if the user just signed in in the last 5 minutes.
-		if (new Date().getTime() / 1000 - decodedIdToken.auth_time > 5 * 60) {
-			res.code(401);
-			throw 'Recent sign in required!';
+			await auth.setCustomUserClaims(decodedIdToken.uid, {
+				locale,
+			});
+		} catch (error) {
+			console.error(error);
 		}
-
-		await auth.setCustomUserClaims(decodedIdToken.uid, {
-			locale,
-		});
 
 		const days = 14;
 		const expiresIn = days * 60 * 60 * 24 * 1000;
@@ -134,6 +240,10 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 		return { cookie: sessionCookie, expiresIn };
 	});
 };
+
+///
+/// KOA
+///
 
 router.use(passport.initialize() as any);
 

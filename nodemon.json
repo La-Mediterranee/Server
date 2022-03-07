@@ -1,6 +1,8 @@
 {
-	"watch": ["./"],
+	"watch": ["./src"],
 	"ext": ".ts,.js",
 	"ignore": [],
-	"exec": "ts-node -r ./src/index.ts"
+	"execMap": {
+		"ts": "ts-node --esm"
+	}
 }
