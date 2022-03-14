@@ -84,13 +84,8 @@ async function getProducts() {
 				name: faker.commerce.productName(),
 				price: Number(faker.commerce.price(1, 20, 2)),
 				image: {
-					src: `${faker.image.imageUrl(
-						undefined,
-						undefined,
-						'food',
-						true
-					)}`,
-					alt: 'Food product',
+					src: `${faker.image.imageUrl(undefined, undefined, 'food', true)}`
+					// alt: 'Food product',
 				},
 				categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 					faker.commerce.department()
@@ -98,8 +93,8 @@ async function getProducts() {
 				description: faker.commerce.productDescription(),
 				toppings: toppings,
 				variations: {
-					toppings: toppings,
-				},
+					toppings: toppings
+				}
 			};
 		});
 
@@ -107,11 +102,7 @@ async function getProducts() {
 }
 
 function createToppings(): Topping[] {
-	return [
-		createTopping('Sauce'),
-		createTopping('Beilagen'),
-		createTopping('Extra Beilagen', 0),
-	];
+	return [createTopping('Sauce'), createTopping('Beilagen'), createTopping('Extra Beilagen', 0)];
 }
 
 function createTopping(name: string, qtyMin: number = 1): Topping {
@@ -125,9 +116,9 @@ function createTopping(name: string, qtyMin: number = 1): Topping {
 				ID: crypto.randomUUID(),
 				name: 'Mais',
 				desc: '',
-				price: 0,
-			},
-		],
+				price: 0
+			}
+		]
 	};
 }
 
@@ -141,8 +132,8 @@ async function getProduct(id: string): Promise<Product> {
 		image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
 		toppings: createToppings(),
 		variations: {
-			toppings: createToppings(),
-		},
+			toppings: createToppings()
+		}
 	};
 }
 
