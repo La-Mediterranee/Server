@@ -1,13 +1,9 @@
-//@ts-ignore
-import { default as Router } from 'koa-router';
-
 // import { runAsync } from 'src/utils/helpers';
 // import { stripe } from '@config/stripe';
 // import { db } from '@config/firebase';
 
 import { db } from '../config/firebase.js';
 import { stripe } from '../config/stripe.js';
-import { runAsync } from '../utils/helpers.js';
 
 import type { Stripe } from 'stripe';
 import type { FastifyPluginAsync } from 'fastify';
@@ -24,7 +20,7 @@ interface Payment {
 	items: CartItem[];
 }
 
-export const paymentsRouter: FastifyPluginAsync = async (app, opts) => {
+export const router: FastifyPluginAsync = async (app, opts) => {
 	app.post<{
 		Body: Payment;
 	}>('/create-payment-intent', async (req) => {
@@ -32,31 +28,17 @@ export const paymentsRouter: FastifyPluginAsync = async (app, opts) => {
 		const amount = await calculateCharge(body.items);
 		const paymentIntent = await createPaymentIntent(amount);
 		return {
-			clientSecret: paymentIntent.client_secret,
+			clientSecret: paymentIntent.client_secret
 		};
 	});
 };
-
-const router = new Router();
-
-router.post(
-	'/create-payment-intent',
-	runAsync(async (ctx) => {
-		const body = ctx.body as Payment;
-		const amount = await calculateCharge(body.items);
-		const paymentIntent = await createPaymentIntent(amount);
-		ctx.body = {
-			clientSecret: paymentIntent.client_secret,
-		};
-	})
-);
 
 export default router;
 
 async function calculateCharge(items: CartItem[]): Promise<number> {
 	const promises = items.map((item) => {
 		return stripe.prices.list({
-			product: item.sku,
+			product: item.sku
 		});
 
 		// return db.collectionGroup('products').where('', '==', item.sku).get();
@@ -71,12 +53,10 @@ async function calculateCharge(items: CartItem[]): Promise<number> {
 /**
  * Create a Payment Intent with a specific amount
  */
-async function createPaymentIntent(
-	amount: number
-): Promise<Stripe.Response<Stripe.PaymentIntent>> {
+async function createPaymentIntent(amount: number): Promise<Stripe.Response<Stripe.PaymentIntent>> {
 	const paymentIntent = await stripe.paymentIntents.create({
 		amount,
-		currency: 'eur',
+		currency: 'eur'
 		// receipt_email: 'hello@fireship.io',
 	});
 
@@ -89,7 +69,7 @@ async function chargeCustomer(customerId: string, amount: number) {
 	// Lookup the payment methods available for the customer
 	const paymentMethods = await stripe.paymentMethods.list({
 		customer: customerId,
-		type: 'card',
+		type: 'card'
 	});
 	// Charge the customer and payment method immediately
 	const paymentIntent = await stripe.paymentIntents.create({
@@ -98,7 +78,7 @@ async function chargeCustomer(customerId: string, amount: number) {
 		customer: customerId,
 		payment_method: paymentMethods.data[0].id,
 		off_session: true,
-		confirm: true,
+		confirm: true
 	});
 
 	if (paymentIntent.status === 'succeeded') {
