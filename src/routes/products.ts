@@ -1,15 +1,10 @@
 import * as crypto from 'node:crypto';
 
-//@ts-ignore
-import { default as Router } from 'koa-router';
-
 import { faker } from '@faker-js/faker';
 
 import { db } from '../config/firebase.js';
-import { runAsync } from '../utils/helpers.js';
 
 import type { FastifyPluginAsync } from 'fastify';
-
 import type { Product, Topping } from './products.types';
 
 class ProductController {
@@ -17,9 +12,7 @@ class ProductController {
 	// static readonly categories = db.collection('products');
 }
 
-const router = new Router();
-
-export const productsRouter: FastifyPluginAsync = async (app, opts) => {
+export const router: FastifyPluginAsync = async (app, opts) => {
 	app.get('/', async () => {
 		return await getProducts();
 	});
@@ -32,7 +25,7 @@ export const productsRouter: FastifyPluginAsync = async (app, opts) => {
 	});
 
 	app.get('/categories', async (req) => {
-		return db.collection('products').get();
+		return db.collection('categories').get();
 	});
 
 	app.get<{
@@ -40,39 +33,11 @@ export const productsRouter: FastifyPluginAsync = async (app, opts) => {
 	}>('/categories/:category', async (ctx) => {
 		//
 		const category = ctx.params.category;
-		return db.collection('products').doc(category).get();
+		return db.collection('products').where('categories', 'array-contains', category);
 	});
 };
 
 export default router;
-
-router.get(
-	'/',
-	runAsync(async (ctx) => {
-		ctx.body = await getProducts();
-	})
-);
-
-router.get(
-	'/:product',
-	runAsync(async (ctx) => {
-		const product = ctx.params.product as string;
-		ctx.body = await getProduct(product);
-	})
-);
-
-router.get('/categories', async (ctx) => {
-	const category = ctx.params.category as string;
-	const data = {};
-	ctx.body = db.collection('products').get();
-});
-
-router.get('/categories/:category', async (ctx) => {
-	//
-	const category = ctx.params.category as string;
-	const data = {};
-	ctx.body = db.collection('products').doc(category).get();
-});
 
 async function getProducts() {
 	const products: Product[] = Array(10)

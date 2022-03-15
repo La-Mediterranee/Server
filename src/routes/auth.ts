@@ -1,11 +1,8 @@
-import * as path from 'node:path';
-import { readFileSync } from 'node:fs';
-//@ts-ignore
-import { default as Router } from 'koa-router';
-//@ts-ignore
-import { default as passport, Passport, use } from 'koa-passport';
 import fastifyPassport from 'fastify-passport';
 import fastifySecureSession from 'fastify-secure-session';
+
+import * as path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { Strategy as DiscordStrategy } from 'passport-discord';
 
 import { discord } from '../utils/consts.js';
@@ -13,8 +10,12 @@ import { auth, db } from '../config/firebase.js';
 
 import { signInFirebaseTemplateWithPostMessage } from '../utils/helpers.js';
 
-import type { Stripe } from 'stripe';
-import type { FastifyPluginAsync, FastifyPluginCallback } from 'fastify';
+import type {
+	FastifyPluginAsync,
+	FastifyPluginCallback,
+	FastifyReply,
+	FastifyRequest
+} from 'fastify';
 // import type { auth } from 'firebase-admin';
 
 interface LoginQuery {
@@ -29,13 +30,11 @@ interface OAuthUser {
 	[key: string]: number | string | null;
 }
 
-const router = new Router();
-
 // import '../middleware/passport.js';
 
-export const authRouter: FastifyPluginAsync = async (app, opts) => {
+export const router: FastifyPluginAsync = async (app, opts) => {
 	app.register(fastifySecureSession, {
-		key: readFileSync(path.join(process.cwd(), 'secret-key')),
+		key: readFileSync(path.join(process.cwd(), 'secret-key'))
 	});
 
 	app.register(fastifyPassport.initialize());
@@ -58,7 +57,7 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 				clientID: discord.clientID,
 				clientSecret: discord.clientSecret,
 				callbackURL: discord.redirectURL,
-				scope: discord.scopes,
+				scope: discord.scopes
 			},
 			async function (accessToken, refreshToken, profile, done) {
 				return done(null, profile);
@@ -66,7 +65,29 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 		)
 	);
 
-	const supportedProviders = new Set(['discord']);
+	const providers = new Map<string, <T>(req: FastifyRequest, res: FastifyReply) => Promise<any>>([
+		[
+			'discord',
+			async (req, res) => {
+				const cb = fastifyPassport.authenticate(['discord'], {
+					scope: discord.scopes,
+					session: false
+				});
+
+				// ts complaints that is doesn't have access to `this`
+				// because of the typedefinition
+				await cb.apply(app, [req, res]);
+			}
+		]
+		// [
+		// 	'steam',
+		// 	async (_req, _res) => {
+		// 		return 'not implemented right now';
+		// 	}
+		// ]
+	]);
+
+	// const supportedProviders = new Set(['discord']);
 
 	interface DiscordUser extends OAuthUser {
 		avatar: string | null;
@@ -85,16 +106,14 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 		'/handler/:provider',
 		{
 			preValidation: fastifyPassport.authenticate(['discord'], {
-				session: false,
-			}),
+				session: false
+			})
 		},
 		async (req, res) => {
-			if (!supportedProviders.has(req.params.provider)) {
+			if (!providers.has(req.params.provider)) {
 				throw app.httpErrors.unprocessableEntity(
 					`Selected Provider not supported.\n` +
-						`Supported Providers: ${[...supportedProviders].join(
-							','
-						)}`
+						`Supported Providers: ${[...providers.keys()].join(',')}`
 				);
 			}
 
@@ -115,7 +134,7 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 							await auth.updateUser(uid, {
 								photoURL,
 								email: user.email,
-								displayName: user.username,
+								displayName: user.username
 							});
 						} catch (_e) {
 							if ((<any>_e).code === 'auth/user-not-found') {
@@ -123,13 +142,13 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 									uid,
 									photoURL,
 									email: user.email,
-									displayName: user.username,
+									displayName: user.username
 								});
 							}
 						}
 
 						token = await auth.createCustomToken(uid, {
-							locale: user.locale,
+							locale: user.locale
 						});
 					} catch (error) {
 						console.error(error);
@@ -148,57 +167,37 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 		}
 	);
 
-	// Object.create(null, {
-	// 	discord: callback
-	// })
-
 	app.get<{
 		Querystring: { provider: string };
 	}>('/login', async (req, res) => {
 		const query = req.query;
 		const provider = query.provider;
 
-		switch (provider) {
-			case 'discord':
-				const cb = fastifyPassport.authenticate(['discord'], {
-					scope: discord.scopes,
-					session: false,
-				});
-
-				// ts complaints that is doesn't have access to `this`
-				// because of the typedefinition
-				await cb.apply(app, [req, res]);
-
-				return;
-			case 'steam':
-				return 'not implemented right now';
-			default:
-				throw app.httpErrors.unprocessableEntity(
-					`Selected Provider not supported.\n` +
-						`Supported Providers: ${[...supportedProviders].join(
-							','
-						)}`
-				);
+		if (!providers.has(provider)) {
+			throw app.httpErrors.unprocessableEntity(
+				`Selected Provider not supported.\n` +
+					`Supported Providers: ${[...providers.keys()].join(',')}`
+			);
 		}
+
+		return providers.get(provider)!(req, res);
 	});
 
 	app.post<{
 		Body: { idToken: string; locale: string };
 	}>('/session', async (req, res) => {
 		const { idToken, locale } = req.body;
+
 		try {
 			const decodedIdToken = await auth.verifyIdToken(idToken);
 			// Only process if the user just signed in in the last 5 minutes.
-			if (
-				new Date().getTime() / 1000 - decodedIdToken.auth_time >
-				5 * 60
-			) {
+			if (new Date().getTime() / 1000 - decodedIdToken.auth_time > 5 * 60) {
 				res.code(401);
 				throw 'Recent sign in required!';
 			}
 
 			await auth.setCustomUserClaims(decodedIdToken.uid, {
-				locale,
+				locale
 			});
 		} catch (error) {
 			console.error(error);
@@ -208,145 +207,25 @@ export const authRouter: FastifyPluginAsync = async (app, opts) => {
 		const expiresIn = days * 60 * 60 * 24 * 1000;
 
 		const sessionCookie = await auth.createSessionCookie(idToken, {
-			expiresIn,
+			expiresIn
 		});
 
 		return { cookie: sessionCookie, expiresIn };
 	});
 
 	app.post<{
-		Body: { idToken: string; locale: string };
+		Body: { uid: string; expiresIn: number };
 	}>('/session/extend', async (req, res) => {
-		const { idToken, locale } = req.body;
-		const decodedIdToken = await auth.verifyIdToken(idToken);
+		const { expiresIn, uid } = req.body;
 
-		// Only process if the user just signed in in the last 5 minutes.
-		if (new Date().getTime() / 1000 - decodedIdToken.auth_time > 5 * 60) {
-			res.code(401);
-			throw 'Recent sign in required!';
-		}
+		const cookie = await refreshSessionCookie(uid, expiresIn);
 
-		await auth.setCustomUserClaims(decodedIdToken.uid, {
-			locale,
-		});
-
-		const days = 14;
-		const expiresIn = days * 60 * 60 * 24 * 1000;
-
-		const sessionCookie = await auth.createSessionCookie(idToken, {
-			expiresIn,
-		});
-
-		return { cookie: sessionCookie, expiresIn };
+		return cookie;
 	});
 };
 
-///
-/// KOA
-///
-
-router.use(passport.initialize() as any);
-
-router.get(
-	'/handler/:provider',
-	passport.authenticate(['discord'], { session: false }),
-	async (ctx) => {
-		try {
-			const user = ctx.query as OAuthUser;
-			const uid = user.id;
-			const token = await auth.createCustomToken(uid);
-			const photoURL = !user.avatar
-				? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=96x96`
-				: `https://cdn.discordapp.com/embed/avatars/${user.discriminator}.png?size=96x96`;
-
-			ctx.set('Content-type', 'text/html');
-
-			ctx.body = signInFirebaseTemplateWithPostMessage(
-				token,
-				user.email,
-				user.username,
-				photoURL
-			);
-		} catch (error) {
-			console.error(error);
-			ctx.throw(500, `Error with Auth the handler`);
-		}
-	}
-);
-
-router.get('/login', (ctx, next) => {
-	const query = ctx.query;
-	const provider = query.provider;
-
-	switch (provider) {
-		case 'discord':
-			passport.authenticate('discord', {
-				scope: discord.scopes,
-				// failureRedirect: '/auth/error',
-				session: false,
-				state: 'discord',
-			})(ctx as any, next);
-			break;
-		case 'steam':
-			break;
-		default:
-			ctx.throw(502, `Provider not supported`);
-			break;
-	}
-});
-
-router.post('/session', async (ctx) => {
-	const { idToken, locale } = ctx.request.body;
-	const decodedIdToken = await auth.verifyIdToken(idToken);
-
-	// Only process if the user just signed in in the last 5 minutes.
-	if (new Date().getTime() / 1000 - decodedIdToken.auth_time > 5 * 60) {
-		ctx.status = 401;
-		ctx.body = 'Recent sign in required!';
-		return;
-	}
-
-	await auth.setCustomUserClaims(decodedIdToken.uid, {
-		locale,
-	});
-
-	const days = 14;
-	const expiresIn = days * 60 * 60 * 24 * 1000;
-
-	const sessionCookie = await auth.createSessionCookie(idToken, {
-		expiresIn,
-	});
-
-	ctx.body = { cookie: sessionCookie, expiresIn };
-});
-
-router.post('/session/extend', async (ctx) => {
-	const { idToken, locale } = ctx.body;
-	const decodedIdToken = await auth.verifyIdToken(idToken);
-
-	// Only process if the user just signed in in the last 5 minutes.
-	if (new Date().getTime() / 1000 - decodedIdToken.auth_time > 5 * 60) {
-		ctx.status = 401;
-		ctx.body = 'Recent sign in required!';
-		return;
-	}
-
-	await auth.setCustomUserClaims(decodedIdToken.uid, {
-		locale,
-	});
-
-	const days = 14;
-	const expiresIn = days * 60 * 60 * 24 * 1000;
-
-	const sessionCookie = await auth.createSessionCookie(idToken, {
-		expiresIn,
-	});
-
-	ctx.body = { cookie: sessionCookie, expiresIn };
-});
-
 async function refreshSessionCookie(uid: string, expiresIn: number) {
-	const config = process.env.VITE_GOOGLE_API_KEY;
+	const config = process.env.GOOGLE_API_KEY;
 
 	const token = await auth.createCustomToken(uid);
 	const res = await fetch(
@@ -354,17 +233,17 @@ async function refreshSessionCookie(uid: string, expiresIn: number) {
 		{
 			method: 'POST',
 			headers: {
-				'content-type': 'application/json',
+				'content-type': 'application/json'
 			},
 			body: JSON.stringify({
 				token,
-				returnSecureToken: true,
-			}),
+				returnSecureToken: true
+			})
 		}
 	).then((r) => r.json());
 
 	const sessionCookie = await auth.createSessionCookie(res.idToken, {
-		expiresIn,
+		expiresIn
 	});
 
 	return sessionCookie;
