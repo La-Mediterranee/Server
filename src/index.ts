@@ -36,6 +36,7 @@ async function main() {
 	try {
 		const address = await fastify.listen(+PORT);
 		console.log(`Server is now listening on ${address}`);
+		// console.log(fastify.printRoutes());
 	} catch (err) {
 		fastify.log.error(err);
 		closeGracefully();

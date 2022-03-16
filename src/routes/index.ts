@@ -10,8 +10,8 @@ import type { FastifyPluginAsync } from 'fastify';
 export const routes: FastifyPluginAsync = async (app) => {
 	app.register(auth, { prefix: '/auth' });
 	app.register(user, { prefix: '/user' });
-	app.register(products, { prefix: '/buy' });
-	app.register(payments, { prefix: '/products' });
+	app.register(payments, { prefix: '/buy' });
+	app.register(products, { prefix: '/products' });
 	app.register(webhooks, { prefix: '/webhooks' });
 	app.get('/test', () => {
 		throw app.httpErrors.notImplemented(`Provider not supported`);
