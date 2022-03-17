@@ -222,6 +222,12 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 
 		return cookie;
 	});
+
+	app.post<{
+		Body: string;
+	}>('/session/verify', async (req, res) => {
+		return await auth.verifySessionCookie(req.body);
+	});
 };
 
 async function refreshSessionCookie(uid: string, expiresIn: number) {
