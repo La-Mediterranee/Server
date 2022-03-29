@@ -15,12 +15,12 @@
 		"strictNullChecks": true,
 		"importsNotUsedAsValues": "error",
 		"isolatedModules": true,
-		"baseUrl": "./",
-		"paths": {
-			"@config/*": ["src/config/*"],
-			"@utils/*": ["src/utils/*"],
-			"@routes/*": ["src/routes/*"]
-		}
+		"baseUrl": "./"
+		// "paths": {
+		// 	"@config/*": ["src/config/*"],
+		// 	"@utils/*": ["src/utils/*"],
+		// 	"@routes/*": ["src/routes/*"]
+		// }
 	},
 	"compileOnSave": true,
 	"ts-node": {

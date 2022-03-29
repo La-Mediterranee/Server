@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package webhooks;
+
+import "google/protobuf/field_mask.proto";
+
+message StripeRequest {
+    bytes body = 1;
+}
+
+service Products {
+    rpc StripeWebhook(StripeRequest) returns (GetProductResponse) {
+        option (google.api.http) = {
+            post: "/v1/webhooks/stripe"
+            body: "body"
+        };
+    };
+}

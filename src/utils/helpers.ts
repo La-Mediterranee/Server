@@ -1,12 +1,13 @@
 import { auth } from '../config/firebase.js';
+import { NODE_ENV } from './consts.js';
 
 // Types
 import type { Next, Context } from 'koa';
 import type { IRouterContext } from 'koa-router';
 
-export function runAsync<T>(
-	cb: (ctx: Context | IRouterContext, next?: Next) => Promise<T>
-) {
+export const dev = NODE_ENV === 'development';
+
+export function runAsync<T>(cb: (ctx: Context | IRouterContext, next?: Next) => Promise<T>) {
 	return (ctx: Context | IRouterContext, next: Next) => {
 		cb(ctx, next).catch(next);
 	};
@@ -79,6 +80,15 @@ async function deleteQueryBatch(db, query, resolve) {
 	process.nextTick(() => {
 		deleteQueryBatch(db, query, resolve);
 	});
+}
+
+export function sliceIntoChunks<T>(arr: T[], chunkSize: number = 10) {
+	const res: Array<T[]> = [];
+	for (let i = 0; i < arr.length; i += chunkSize) {
+		const chunk = arr.slice(i, i + chunkSize);
+		res.push(chunk);
+	}
+	return res;
 }
 
 export function signInFirebaseTemplateWithPostMessage(

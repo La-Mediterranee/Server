@@ -1,0 +1,14 @@
+type: google.api.Service
+name: CLOUD_RUN_HOSTNAME # TODO: change
+title: La Mediterranee Backend
+apis:
+    - name: endpoints.examples.bookstore.Bookstore # TODO: change
+usage:
+    rules:
+        # ListShelves methods can be called without an API Key.
+        - selector: endpoints.examples.bookstore.Bookstore.ListShelves # TODO: change
+          allow_unregistered_calls: true
+backend:
+    rules:
+        - selector: '*'
+          address: grpcs://BACKEND_HOST_NAME # TODO: change

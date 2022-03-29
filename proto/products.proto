@@ -2,7 +2,49 @@ syntax = "proto3";
 
 package products;
 
+import "google/protobuf/field_mask.proto";
+
+enum CategoryType {
+    MENUITEM = 0;
+    GROCERY  = 1;
+}
+
+message Product {
+    string ID = 1;
+
+    bool is_available  = 4;
+    bool is_vegan      = 5;
+    bool is_vegetarian = 6;
+    bool is_popular    = 7;
+
+    string name        = 2;
+    string desc        = 3;
+    string category_id = 8;
+}
 
 service Products {
+    rpc GetProducts(google.protobuf.Empty) returns (GetProductResponse) {
+        option (google.api.http) = {
+            get: "/v1/products"
+        };
+    };
 
+    rpc GetProduct(GetProductRequest) returns (Product) {
+        option (google.api.http) = {
+            get: "/v1/products/{product_id}"
+        };
+    };
+}
+
+message GetProductRequest {
+    string product_id                    = 1;
+    google.protobuf.FieldMask field_mask = 2;
+}
+
+message GetProductResponse {
+    Product product = 1;
+}
+
+message GetProductsResponse {
+    repeated Product product = 1;
 }

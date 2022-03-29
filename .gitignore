@@ -3,3 +3,4 @@ node_modules
 service-account.json
 dist/
 .DS_STORE
+.swc

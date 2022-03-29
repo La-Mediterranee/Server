@@ -3,15 +3,21 @@ import Fastify from 'fastify';
 import fastifyAuth from 'fastify-auth';
 import fastifyCors from 'fastify-cors';
 import fastifySensible from 'fastify-sensible';
+import * as path from 'node:path';
 
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 // import { createServer } from 'node:https';
 
 import { routes } from './routes/index.js';
 import { NODE_ENV, PORT } from './utils/consts.js';
+import { readFileSync } from 'node:fs';
+import { platform } from 'node:os';
+import { dirname } from 'node:path';
 
 //@ts-ignore
 globalThis.fetch = fetch;
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 	main();
@@ -25,10 +31,41 @@ async function main() {
 				ignore: 'pid,hostname'
 			}
 		},
-		trustProxy: true
+		trustProxy: true,
+		https: {
+			key: readFileSync(
+				path.join(
+					__dirname,
+					platform() === 'linux'
+						? './config/example.com+5-key.windows.pem'
+						: './config/server-key.osx.pem'
+				)
+			),
+			cert: readFileSync(
+				path.join(
+					__dirname,
+					platform() === 'linux'
+						? './config/example.com+5.windows.pem'
+						: './config/server-cert.osx.pem'
+				)
+			)
+		}
 	});
 
-	fastify.register(fastifyCors, {});
+	fastify.register(fastifyCors, {
+		allowedHeaders: '*',
+		origin: async (origin) => {
+			if (!origin) return true;
+
+			const hostname = new URL(origin).hostname;
+			if (hostname === 'localhost') {
+				//  Request from localhost will pass
+				return true;
+			}
+
+			throw new Error('Not allowed');
+		}
+	});
 	fastify.register(fastifySensible);
 	fastify.register(fastifyAuth);
 	fastify.register(routes, { prefix: 'v1' });
