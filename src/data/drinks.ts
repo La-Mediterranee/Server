@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 const cans = [
 	{
 		name: 'Red Bull 0.2L',
@@ -6,8 +8,8 @@ const cans = [
 			src: 'https://www.redbull.com/energydrink/v1/resources/contentful/images/lcr8qbvxj7mh/02xkRv25i5j4owOiVwFSx/984069e87f0c831166d0fdbccc71bb0f/AT_RBED_250_Single-Unit_close_ambient_ORIGINAL_canwidth528px.png?w=420&h=1086&fm=webp&fit=fill&q=90',
 			alt: '',
 			width: 305,
-			height: 789
-		}
+			height: 789,
+		},
 	},
 
 	//++++++++++++++++++++ 0.33L ++++++++++++++++++++//
@@ -18,8 +20,8 @@ const cans = [
 			src: 'https://d2csxpduxe849s.cloudfront.net/media/33C394AB-A9A7-44D3-B02389D9B9366FD8/FA6AE679-F613-468E-B06BD81A689179DD/9521973A-D958-4D6E-BC17F74FFEA619D6/webimage-158E9D77-1DF0-4E55-BB2D26AB65A8C3AD.png',
 			alt: '',
 			width: 239,
-			height: 600
-		}
+			height: 600,
+		},
 	},
 	{
 		name: 'Coca Cola Zero 0.33L',
@@ -28,8 +30,8 @@ const cans = [
 			src: 'https://d2csxpduxe849s.cloudfront.net/media/33C394AB-A9A7-44D3-B02389D9B9366FD8/5ADE1F79-04EE-457F-96C65F53ABB0C05D/D99518D3-5630-44D2-890E4504D95BEEFC/webimage-05ACB374-EA1B-401C-815B166459D1BB01.png',
 			alt: '',
 			width: 239,
-			height: 600
-		}
+			height: 600,
+		},
 	},
 	{
 		name: 'Fanta 0.33L',
@@ -39,8 +41,8 @@ const cans = [
 			src: '/drinks/Fanta_0,33l/FANTA_Orange_0_33L_CAN.webp',
 			alt: 'Almdudler Original Flasche 0.33L',
 			width: 304,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Sprite 0.33L',
@@ -50,9 +52,9 @@ const cans = [
 			src: '/drinks/Sprite_0,33l/SPRITE_Fresh_0_33L.webp',
 			alt: '',
 			width: 316,
-			height: 788
-		}
-	}
+			height: 788,
+		},
+	},
 ];
 
 const half = [
@@ -63,8 +65,8 @@ const half = [
 			src: '/drinks/Almdudler/Almdudler_0_5L.webp',
 			alt: 'Almdudler Original Flasche 0.5L',
 			width: 233,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Coca Cola Zero 0.5L',
@@ -73,8 +75,8 @@ const half = [
 			src: 'https://d2csxpduxe849s.cloudfront.net/media/33C394AB-A9A7-44D3-B02389D9B9366FD8/B0CCA38E-44B0-434B-9337A194203CAF1E/070AB568-7636-4511-990D3F0EDF86138D/webimage-D587597E-B8F8-473C-BE0B055333ADA994.png',
 			alt: '',
 			width: 227,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Coca Cola 0.5L',
@@ -83,8 +85,8 @@ const half = [
 			src: 'https://d2csxpduxe849s.cloudfront.net/media/33C394AB-A9A7-44D3-B02389D9B9366FD8/ED92AAA1-74C0-4235-A930A1B05A7B7829/B9181C73-D690-49E7-AAB5F5B97660F9CB/webimage-425C7651-7C48-4A4F-AEF45B51436AA4A1.png',
 			alt: '',
 			width: 228,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 
 	{
@@ -95,8 +97,8 @@ const half = [
 			src: '/drinks/Sprite_0,5l/SPRITE_Fresh_0_5L.webp',
 			alt: '',
 			width: 229,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Fanta 0.5L',
@@ -106,8 +108,8 @@ const half = [
 			src: '/drinks/Fanta_0,5l/FANTA_Orange_0_5L.webp',
 			alt: '',
 			width: 227,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Eistee Zitrone 0.5L',
@@ -116,8 +118,8 @@ const half = [
 			src: '/drinks/Rauch/Eistee_Pfirsich_0_5L/Eistee_Pfirsich_0_5L.webp',
 			alt: '',
 			width: 234,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Eistee Pfirsich 0.5L',
@@ -126,8 +128,8 @@ const half = [
 			src: '/drinks/Rauch/Eistee_Zitrone_0_5L/Eistee_Zitrone_0_5L.webp',
 			alt: '',
 			width: 234,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Mineralwasser 0.5L',
@@ -136,8 +138,8 @@ const half = [
 			src: '/drinks/RomerQuelle_prickelnd/RÖMERQUELLE_prickelnd_1_0.webp',
 			alt: '',
 			width: 231,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Rauch Happy Day Sprizz 0.5L',
@@ -146,8 +148,8 @@ const half = [
 			src: '/drinks/Rauch/Rauch_Happy_Day_Sprizz_0_5L/Rauch_Happy_Day_Sprizz_0_5L.webp',
 			alt: '',
 			width: 234,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Multivitamin 0.5L',
@@ -156,9 +158,9 @@ const half = [
 			src: '/drinks/Rauch/Rauch_Multivit_0_5L/Rauch_Multivit_0_5L.webp',
 			alt: '',
 			width: 234,
-			height: 800
-		}
-	}
+			height: 800,
+		},
+	},
 ];
 
 const oneAndHalf = [
@@ -170,8 +172,8 @@ const oneAndHalf = [
 			src: '/drinks/RomerQuelle_prickelnd/RÖMERQUELLE_prickelnd_1_0.webp',
 			alt: '',
 			width: 231,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Sprite 1.5L',
@@ -181,8 +183,8 @@ const oneAndHalf = [
 			src: '/drinks/Sprite_1,5l/SPRITE_1_5L.webp',
 			alt: '',
 			width: 257,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Fanta 1.5L',
@@ -192,8 +194,8 @@ const oneAndHalf = [
 			src: '/drinks/Fanta_1,5l/FANTA_Orange_1_5L.webp',
 			alt: '',
 			width: 239,
-			height: 800
-		}
+			height: 800,
+		},
 	},
 	{
 		name: 'Coca Cola 1.5L',
@@ -202,8 +204,8 @@ const oneAndHalf = [
 			src: 'https://d2csxpduxe849s.cloudfront.net/media/33C394AB-A9A7-44D3-B02389D9B9366FD8/53975349-F29C-47A7-83DF8077DF8C0F51/EEFB6995-4ACC-43C2-B076C96C0A3B02A5/webimage-739D7FAE-1C86-4664-AAC63C49CEACDFBA.png',
 			alt: '',
 			width: 188,
-			height: 600
-		}
+			height: 600,
+		},
 	},
 	{
 		name: 'Coca Cola Zero 1.5L',
@@ -212,8 +214,8 @@ const oneAndHalf = [
 			src: 'https://d2csxpduxe849s.cloudfront.net/media/33C394AB-A9A7-44D3-B02389D9B9366FD8/6D1351ED-1BF5-42EC-A6089295742DAAA9/3AEAD8EB-E092-4AE3-807EDA585E4FEA5D/webimage-C22FB73B-079D-434A-BAFF491586CF7BA0.png',
 			alt: '',
 			width: 188,
-			height: 600
-		}
+			height: 600,
+		},
 	},
 	{
 		name: 'Eistee Zitrone 1.5L',
@@ -222,8 +224,8 @@ const oneAndHalf = [
 			src: '/drinks/Rauch/Eistee_Zitrone_1_5L/Eistee_Zitrone_1_5L.webp',
 			alt: '',
 			height: 800,
-			width: 212
-		}
+			width: 212,
+		},
 	},
 	{
 		name: 'Eistee Pfirsich 1.5L',
@@ -232,9 +234,9 @@ const oneAndHalf = [
 			src: '/drinks/Rauch/Eistee_Pfirsich_1_5L/Eistee_Pfirsich_1_5L.webp',
 			alt: '',
 			width: 212,
-			height: 800
-		}
-	}
+			height: 800,
+		},
+	},
 ];
 
 //++++++++++++++++++++ 2L ++++++++++++++++++++//
@@ -247,9 +249,9 @@ const two = [
 			src: '/drinks/Pepsi/Pepsi_Cola_1500ml.webp',
 			alt: '',
 			width: 224,
-			height: 800
-		}
-	}
+			height: 800,
+		},
+	},
 ];
 
 export default [
@@ -260,5 +262,8 @@ export default [
 	//++++++++++++++++++++ 1.5L ++++++++++++++++++++//
 	...oneAndHalf,
 	//++++++++++++++++++++ 2L ++++++++++++++++++++//
-	...two
-];
+	...two,
+].map((drink) => ({
+	...drink,
+	ID: randomUUID(),
+}));

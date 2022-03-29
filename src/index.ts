@@ -24,12 +24,24 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 }
 
 async function main() {
+	const hasFullICU = (() => {
+		try {
+			const january = new Date(9e8);
+			const spanish = new Intl.DateTimeFormat('es', { month: 'long' });
+			return spanish.format(january) === 'enero';
+		} catch (err) {
+			return false;
+		}
+	})();
+
+	console.log(hasFullICU);
+
 	const fastify = Fastify({
 		logger: {
 			prettyPrint: NODE_ENV === 'development' && {
 				translateTime: 'HH:MM:ss Z',
-				ignore: 'pid,hostname'
-			}
+				ignore: 'pid,hostname',
+			},
 		},
 		trustProxy: true,
 		https: {
@@ -37,7 +49,7 @@ async function main() {
 				path.join(
 					__dirname,
 					platform() === 'linux'
-						? './config/example.com+5-key.windows.pem'
+						? './config/server-key.windows.pem'
 						: './config/server-key.osx.pem'
 				)
 			),
@@ -45,11 +57,11 @@ async function main() {
 				path.join(
 					__dirname,
 					platform() === 'linux'
-						? './config/example.com+5.windows.pem'
+						? './config/server-cert.windows.pem'
 						: './config/server-cert.osx.pem'
 				)
-			)
-		}
+			),
+		},
 	});
 
 	fastify.register(fastifyCors, {
@@ -64,7 +76,7 @@ async function main() {
 			}
 
 			throw new Error('Not allowed');
-		}
+		},
 	});
 	fastify.register(fastifySensible);
 	fastify.register(fastifyAuth);

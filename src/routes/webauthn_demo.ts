@@ -117,8 +117,13 @@ router.post('/response', (ctx, response) => {
 	}
 
 	const webauthnResp = ctx.body;
+	// const clientData = JSON.parse(
+	// 	base64url.decode(webauthnResp.response.clientDataJSON)
+	// 	);
 	const clientData = JSON.parse(
-		base64url.decode(webauthnResp.response.clientDataJSON)
+		Buffer.from(webauthnResp.response.clientDataJSON, 'base64url').toString(
+			'utf-8'
+		)
 	);
 
 	/* Check challenge... */
