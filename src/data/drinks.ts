@@ -267,3 +267,7 @@ export default [
 	...drink,
 	ID: randomUUID(),
 }));
+
+//mineralwasser mit/ohne 1.5L 280
+//eistee pfirsich/zitrone 1.5L 330
+//aluvera 0.5L/0.3L
