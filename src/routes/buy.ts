@@ -11,6 +11,27 @@ import type { DocumentData } from 'firebase-admin/firestore';
 
 type ID = string;
 
+// enum OrderStatus {
+//     COMPLETED, PAID, PENDING, CANCELLED
+// }
+
+const orderStates = Object.freeze({
+	// The order has been canceled, possibly because the user or the account have ceased to exist
+	CANCELED: 'CANCELED',
+	// The order has been saved by the seller, but has not yet been sent to the buyer to approve
+	DRAFT: 'DRAFT',
+	// Negotiation pending of buyer's action
+	PENDING_BUYER: 'DRAFT',
+	// Negotiation pending of seller's action
+	PENDING_SELLER: 'PENDING_SELLER',
+	// Negotiation realized
+	REALIZED: 'REALIZED',
+	// Negotiation rejected by buyer
+	REJECTED_BY_BUYER: 'REJECTED_BY_BUYER',
+	// Negotiation rejected by seller
+	REJECTED_BY_SELLER: 'REJECTED_BY_SELLER'
+});
+
 interface ICartItem {
 	readonly ID: ID;
 	readonly name: string;
@@ -47,7 +68,7 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 
 			return {
 				clientSecret: paymentIntent.client_secret,
-				amount: paymentIntent.amount,
+				amount: paymentIntent.amount
 			};
 		} catch (error) {
 			console.error(error);
@@ -67,12 +88,9 @@ const groceriesRef = db.collection('groceries');
 const toppingsRef = db.collection('toppings');
 
 async function calculateCharge(items: CartItem[]): Promise<number> {
-	const table: Record<
-		ICartItem['categoryType'],
-		(CartGroceryItem | CartMenuItem)[]
-	> = {
+	const table: Record<ICartItem['categoryType'], (CartGroceryItem | CartMenuItem)[]> = {
 		grocery: [],
-		menuitem: [],
+		menuitem: []
 	};
 
 	for (const item of items) {
@@ -82,21 +100,15 @@ async function calculateCharge(items: CartItem[]): Promise<number> {
 	const groceries = <CartGroceryItem[]>table.grocery; // new Array<CartGroceryItem>();
 	const menuitems = <CartMenuItem[]>table.menuitem; // new Array<CartMenuItem>();
 
-	const groceryDocRefs: BatchRead = groceries.map((grocery) =>
-		groceriesRef.doc(grocery.ID)
-	);
-	const menuitemDocRefs: BatchRead = menuitems.map((menuitem) =>
-		menuitemsRef.doc(menuitem.ID)
-	);
+	const groceryDocRefs: BatchRead = groceries.map((grocery) => groceriesRef.doc(grocery.ID));
+	const menuitemDocRefs: BatchRead = menuitems.map((menuitem) => menuitemsRef.doc(menuitem.ID));
 	const toppingsDocRefs: BatchRead = [];
 	const toppingMasks: string[] = [];
 
 	for (const item of menuitems) {
 		item.selectedToppings?.forEach(({ toppingID, toppingOptionID }) => {
 			toppingsDocRefs.push(toppingsRef.doc(toppingID));
-			toppingOptionID.forEach((option) =>
-				toppingMasks.push(`options.${option}.price`)
-			);
+			toppingOptionID.forEach((option) => toppingMasks.push(`options.${option}.price`));
 		});
 	}
 
@@ -108,22 +120,16 @@ async function calculateCharge(items: CartItem[]): Promise<number> {
 	const menuitemPromises = db.getAll(...menuitemDocRefs);
 	const toppingsPromises = db.getAll(...toppingsDocRefs);
 
-	const res = await Promise.allSettled([
-		groceryPromises,
-		menuitemPromises,
-		toppingsPromises,
-	]);
+	const res = await Promise.allSettled([groceryPromises, menuitemPromises, toppingsPromises]);
 
 	const s = [
 		new Map<ID, unknown>(),
 		new Map<ID, { price: number; salesPrice?: number }>(),
-		new Map<ID, { options: Record<string, { price: number }> }>(),
+		new Map<ID, { options: Record<string, { price: number }> }>()
 	];
 
 	res.forEach((r, i) => {
-		r.status === 'fulfilled'
-			? r.value.forEach((e) => s[i].set(e.id, e.data()))
-			: r.reason;
+		r.status === 'fulfilled' ? r.value.forEach((e) => s[i].set(e.id, e.data())) : r.reason;
 	});
 
 	s.forEach((r) => console.debug(r));
@@ -150,15 +156,13 @@ async function calculateCharge(items: CartItem[]): Promise<number> {
 /**
  * Create a Payment Intent with a specific amount
  */
-async function createPaymentIntent(
-	amount: number
-): Promise<Stripe.Response<Stripe.PaymentIntent>> {
+async function createPaymentIntent(amount: number): Promise<Stripe.Response<Stripe.PaymentIntent>> {
 	const paymentIntent = await stripe.paymentIntents.create({
 		amount,
 		currency: 'eur',
 		automatic_payment_methods: {
-			enabled: true,
-		},
+			enabled: true
+		}
 		// receipt_email: 'hello@fireship.io',
 	});
 
@@ -171,7 +175,7 @@ async function chargeCustomer(customerId: string, amount: number) {
 	// Lookup the payment methods available for the customer
 	const paymentMethods = await stripe.paymentMethods.list({
 		customer: customerId,
-		type: 'card',
+		type: 'card'
 	});
 	// Charge the customer and payment method immediately
 	const paymentIntent = await stripe.paymentIntents.create({
@@ -180,7 +184,7 @@ async function chargeCustomer(customerId: string, amount: number) {
 		customer: customerId,
 		payment_method: paymentMethods.data[0].id,
 		off_session: true,
-		confirm: true,
+		confirm: true
 	});
 
 	if (paymentIntent.status === 'succeeded') {

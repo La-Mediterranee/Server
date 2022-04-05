@@ -13,7 +13,7 @@ import type { Product, Topping } from './products.types';
 
 function createTopping(name: string, qtyMin: number = 1): Topping {
 	return {
-		ID: 'jqNrLNUjqmyoRbBrG2K7',
+		ID: 'jqNrLNUjqmyoRbBrG4K7',
 		name,
 		qtyMin,
 		qtyMax: 5,
@@ -92,15 +92,17 @@ class ProductController {
 				return {
 					ID: crypto.randomUUID(),
 					name: faker.commerce.productName(),
-					price: Number(faker.commerce.price(1, 20, 2)),
+					price: Number(faker.commerce.price(50, 3500, 2)),
 					image: {
-						src: `${faker.image.imageUrl(undefined, undefined, 'food', true, true)}`
+						src: `${faker.image.imageUrl(250, 150, 'food', true, true)}`,
 						// alt: 'Food product',
+						height: 150,
+						width: 250
 					},
 					categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 						faker.commerce.department()
 					),
-					description: faker.commerce.productDescription(),
+					desc: faker.commerce.productDescription(),
 					toppings: toppings,
 					variations: {
 						toppings: toppings
@@ -127,7 +129,7 @@ class ProductController {
 					categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 						faker.commerce.department()
 					),
-					description: faker.commerce.productDescription(),
+					desc: faker.commerce.productDescription(),
 					toppings: toppings,
 					variations: {
 						toppings: toppings
@@ -142,7 +144,7 @@ class ProductController {
 		return {
 			ID: id,
 			name: 'Hamburger',
-			description: '',
+			desc: '',
 			price: 4.5,
 			categories: ['burger'],
 			image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
@@ -157,7 +159,7 @@ class ProductController {
 		return {
 			ID: id,
 			name: 'Hamburger',
-			description: '',
+			desc: '',
 			price: 4.5,
 			categories: ['burger'],
 			image: { src: '/burger.webp', alt: 'Bild von einem Burger' },

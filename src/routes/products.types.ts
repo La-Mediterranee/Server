@@ -29,7 +29,7 @@ export interface Product {
 	readonly ID: ID;
 	readonly sku?: SKU;
 	readonly name: string;
-	readonly description: string;
+	readonly desc: string;
 	readonly price: number;
 	readonly image: Image;
 	readonly categories: readonly string[];
