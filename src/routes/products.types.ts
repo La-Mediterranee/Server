@@ -1,3 +1,5 @@
+import type { AllgenKeys } from '../allergens';
+
 type SKU = string;
 type ID = string;
 
@@ -35,6 +37,7 @@ export interface Product {
 	readonly categories: readonly string[];
 	readonly variations?: Variations;
 	readonly toppings: readonly Topping[];
+	readonly allergens: readonly AllgenKeys[];
 	readonly rating?: {
 		readonly value: number;
 		readonly count: number;

@@ -7,6 +7,7 @@ import drinks from '../data/drinks.js';
 
 import { dev } from '../utils/helpers.js';
 import { db } from '../config/firebase.js';
+import { allergenKeys } from '../allergens.js';
 
 import type { FastifyPluginAsync } from 'fastify';
 import type { Product, Topping } from './products.types';
@@ -73,6 +74,12 @@ function createToppings(): Topping[] {
 	return [createSaladTopping(), createSauceTopping(), createTopping('Extra Beilagen', 0)];
 }
 
+function createAllergens() {
+	return allergenKeys
+		.sort(() => Math.random() - Math.random())
+		.slice(0, Math.round(Math.random() * (allergenKeys.length - 1)));
+}
+
 class ProductController {
 	static readonly categories = db.collection('product-categories');
 
@@ -94,7 +101,7 @@ class ProductController {
 					name: faker.commerce.productName(),
 					price: Number(faker.commerce.price(50, 3500, 2)),
 					image: {
-						src: `${faker.image.imageUrl(250, 150, 'food', true, true)}`,
+						src: '/burger.webp', // `${faker.image.imageUrl(250, 150, 'food', true, true)}`,
 						// alt: 'Food product',
 						height: 150,
 						width: 250
@@ -102,6 +109,7 @@ class ProductController {
 					categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 						faker.commerce.department()
 					),
+					allergens: createAllergens(),
 					desc: faker.commerce.productDescription(),
 					toppings: toppings,
 					variations: {
@@ -129,6 +137,7 @@ class ProductController {
 					categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 						faker.commerce.department()
 					),
+					allergens: createAllergens(),
 					desc: faker.commerce.productDescription(),
 					toppings: toppings,
 					variations: {
@@ -149,6 +158,7 @@ class ProductController {
 			categories: ['burger'],
 			image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
 			toppings: createToppings(),
+			allergens: createAllergens(),
 			variations: {
 				toppings: createToppings()
 			}
@@ -163,6 +173,7 @@ class ProductController {
 			price: 4.5,
 			categories: ['burger'],
 			image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
+			allergens: createAllergens(),
 			toppings: createToppings()
 		};
 	}

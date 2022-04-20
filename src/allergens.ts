@@ -1,3 +1,36 @@
+export type AllgenKeys =
+	| 'A'
+	| 'B'
+	| 'C'
+	| 'D'
+	| 'E'
+	| 'F'
+	| 'G'
+	| 'H'
+	| 'L'
+	| 'M'
+	| 'N'
+	| 'O'
+	| 'P'
+	| 'R';
+
+export const allergenKeys: AllgenKeys[] = [
+	'A',
+	'B',
+	'C',
+	'D',
+	'E',
+	'F',
+	'G',
+	'H',
+	'L',
+	'M',
+	'N',
+	'O',
+	'P',
+	'R'
+];
+
 export const allergens = {
 	en: {
 		A: 'Gluten-containing grains',

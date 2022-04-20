@@ -4,3 +4,8 @@ retrieve porducts with category:
 Field Selection:
     dynamoDB: Projection Expressions
     firestore: gRPC field mask
+
+Schema for Orders for Email:
+    https://developers.google.com/gmail/markup/reference/order
+    https://schema.org/Order
+    https://schema.org/Invoice
