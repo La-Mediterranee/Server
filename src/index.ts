@@ -15,7 +15,13 @@ import { platform } from 'node:os';
 import { dirname } from 'node:path';
 
 //@ts-ignore
-globalThis.fetch = fetch;
+// globalThis.fetch = fetch;
+
+Object.defineProperty(globalThis, 'fetch', {
+	value: fetch,
+	configurable: false,
+	writable: false,
+});
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
