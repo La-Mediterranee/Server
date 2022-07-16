@@ -1,18 +1,20 @@
 import fetch from 'node-fetch';
 import Fastify from 'fastify';
-import fastifyAuth from 'fastify-auth';
-import fastifyCors from 'fastify-cors';
-import fastifySensible from 'fastify-sensible';
+import fastifyAuth from '@fastify/auth';
+import fastifyCors from '@fastify/cors';
+import fastifySensible from '@fastify/sensible';
+
 import * as path from 'node:path';
 
+import { platform } from 'node:os';
+import { dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 // import { createServer } from 'node:https';
 
 import { routes } from './routes/index.js';
 import { NODE_ENV, PORT } from './utils/consts.js';
-import { readFileSync } from 'node:fs';
-import { platform } from 'node:os';
-import { dirname } from 'node:path';
+import PinoPretty from 'pino-pretty';
 
 //@ts-ignore
 // globalThis.fetch = fetch;
@@ -26,6 +28,7 @@ Object.defineProperty(globalThis, 'fetch', {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+	console.debug(globalThis.fetch);
 	main();
 }
 
@@ -44,10 +47,18 @@ async function main() {
 
 	const fastify = Fastify({
 		logger: {
-			prettyPrint: NODE_ENV === 'development' && {
-				translateTime: 'HH:MM:ss Z',
-				ignore: 'pid,hostname',
-			},
+			stream: PinoPretty({
+				...(NODE_ENV === 'development' && {
+					translateTime: 'HH:MM:ss Z',
+					ignore: 'pid, hostname',
+				}),
+			}),
+			// transport: {
+			// 	target: 'pino-pretty',
+			// 	options: {
+			// 		pretty
+			// 	},
+			// },
 		},
 		trustProxy: true,
 		https: {
@@ -89,8 +100,7 @@ async function main() {
 	fastify.register(routes, { prefix: 'v1' });
 
 	try {
-		const address = await fastify.listen(+PORT);
-		console.log(`Server is now listening on ${address}`);
+		await fastify.listen({ port: +PORT });
 		// console.log(fastify.printRoutes());
 	} catch (err) {
 		fastify.log.error(err);

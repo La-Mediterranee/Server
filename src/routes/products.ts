@@ -23,9 +23,9 @@ function createTopping(name: string, qtyMin: number = 1): Topping {
 				ID: 'greek-salad',
 				name: 'Greek Salad',
 				desc: '',
-				price: 0
-			}
-		]
+				price: 0,
+			},
+		],
 	};
 }
 
@@ -40,9 +40,9 @@ function createSaladTopping(qtyMin: number = 1): Topping {
 				ID: 'greek-salad',
 				name: 'Greek Salad',
 				desc: '',
-				price: 50
-			}
-		]
+				price: 50,
+			},
+		],
 	};
 }
 function createSauceTopping(qtyMin: number = 1): Topping {
@@ -56,22 +56,26 @@ function createSauceTopping(qtyMin: number = 1): Topping {
 				ID: 'taratar',
 				name: 'Tartar',
 				desc: '',
-				price: 50
+				price: 50,
 			},
 			{
 				ID: 'chilli',
 				name: 'Chilli',
 				desc: '',
-				price: 0
-			}
-		]
+				price: 0,
+			},
+		],
 	};
 }
 
 function createToppings(): Topping[] {
 	// return [createTopping('Sauce'), createTopping('Beilagen'), createTopping('Extra Beilagen', 0)];
 
-	return [createSaladTopping(), createSauceTopping(), createTopping('Extra Beilagen', 0)];
+	return [
+		createSaladTopping(),
+		createSauceTopping(),
+		createTopping('Extra Beilagen', 0),
+	];
 }
 
 function createAllergens() {
@@ -88,7 +92,10 @@ class ProductController {
 	}
 
 	async getMenuFoodCategories() {
-		return db.collection('categories').where('type', '==', 'menuFood').get();
+		return db
+			.collection('categories')
+			.where('type', '==', 'menuFood')
+			.get();
 	}
 
 	async getProducts(): Promise<Product[]> {
@@ -104,7 +111,7 @@ class ProductController {
 						src: '/burger.webp', // `${faker.image.imageUrl(250, 150, 'food', true, true)}`,
 						// alt: 'Food product',
 						height: 150,
-						width: 250
+						width: 250,
 					},
 					categories: Array(randomIntFromInterval(1, 3)).map((v) =>
 						faker.commerce.department()
@@ -113,8 +120,8 @@ class ProductController {
 					desc: faker.commerce.productDescription(),
 					toppings: toppings,
 					variations: {
-						toppings: toppings
-					}
+						toppings: toppings,
+					},
 				};
 			});
 
@@ -131,7 +138,11 @@ class ProductController {
 					name: faker.commerce.productName(),
 					price: Number(faker.commerce.price(1, 20, 2)),
 					image: {
-						src: `${faker.image.imageUrl(undefined, undefined, 'food', true, true)}`
+						src: `${faker.image.imageUrl(
+							undefined,
+							undefined,
+							'food'
+						)}`,
 						// alt: 'Food product',
 					},
 					categories: Array(randomIntFromInterval(1, 3)).map((v) =>
@@ -141,8 +152,8 @@ class ProductController {
 					desc: faker.commerce.productDescription(),
 					toppings: toppings,
 					variations: {
-						toppings: toppings
-					}
+						toppings: toppings,
+					},
 				};
 			});
 
@@ -160,8 +171,8 @@ class ProductController {
 			toppings: createToppings(),
 			allergens: createAllergens(),
 			variations: {
-				toppings: createToppings()
-			}
+				toppings: createToppings(),
+			},
 		};
 	}
 
@@ -174,7 +185,7 @@ class ProductController {
 			categories: ['burger'],
 			image: { src: '/burger.webp', alt: 'Bild von einem Burger' },
 			allergens: createAllergens(),
-			toppings: createToppings()
+			toppings: createToppings(),
 		};
 	}
 
@@ -225,7 +236,9 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 	}>('/categories/:category', async (ctx) => {
 		//
 		const category = ctx.params.category;
-		return db.collection('products').where('categories', 'array-contains', category);
+		return db
+			.collection('products')
+			.where('categories', 'array-contains', category);
 	});
 };
 

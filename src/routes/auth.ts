@@ -1,21 +1,15 @@
-import fastifyPassport from 'fastify-passport';
-import fastifySecureSession from 'fastify-secure-session';
-
 import * as path from 'node:path';
+import fastifyPassport from '@fastify/passport';
+import fastifySecureSession from '@fastify/secure-session';
+
 import { readFileSync } from 'node:fs';
 import { Strategy as DiscordStrategy } from 'passport-discord';
 
 import { discord } from '../utils/consts.js';
 import { auth, db } from '../config/firebase.js';
-
 import { signInFirebaseTemplateWithPostMessage } from '../utils/helpers.js';
 
-import type {
-	FastifyPluginAsync,
-	FastifyPluginCallback,
-	FastifyReply,
-	FastifyRequest
-} from 'fastify';
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 // import type { auth } from 'firebase-admin';
 
 interface LoginQuery {
@@ -34,7 +28,7 @@ interface OAuthUser {
 
 export const router: FastifyPluginAsync = async (app, opts) => {
 	app.register(fastifySecureSession, {
-		key: readFileSync(path.join(process.cwd(), 'secret-key'))
+		key: readFileSync(path.join(process.cwd(), 'secret-key')),
 	});
 
 	app.register(fastifyPassport.initialize());
@@ -57,7 +51,7 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 				clientID: discord.clientID,
 				clientSecret: discord.clientSecret,
 				callbackURL: discord.redirectURL,
-				scope: discord.scopes
+				scope: discord.scopes,
 			},
 			async function (accessToken, refreshToken, profile, done) {
 				return done(null, profile);
@@ -65,20 +59,23 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 		)
 	);
 
-	const providers = new Map<string, <T>(req: FastifyRequest, res: FastifyReply) => Promise<any>>([
+	const providers = new Map<
+		string,
+		<T>(req: FastifyRequest, res: FastifyReply) => Promise<any>
+	>([
 		[
 			'discord',
 			async (req, res) => {
 				const cb = fastifyPassport.authenticate(['discord'], {
 					scope: discord.scopes,
-					session: false
+					session: false,
 				});
 
 				// ts complaints that is doesn't have access to `this`
 				// because of the typedefinition
 				await cb.apply(app, [req, res]);
-			}
-		]
+			},
+		],
 		// [
 		// 	'steam',
 		// 	async (_req, _res) => {
@@ -106,14 +103,16 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 		'/handler/:provider',
 		{
 			preValidation: fastifyPassport.authenticate(['discord'], {
-				session: false
-			})
+				session: false,
+			}),
 		},
 		async (req, res) => {
 			if (!providers.has(req.params.provider)) {
 				throw app.httpErrors.unprocessableEntity(
 					`Selected Provider not supported.\n` +
-						`Supported Providers: ${[...providers.keys()].join(',')}`
+						`Supported Providers: ${[...providers.keys()].join(
+							','
+						)}`
 				);
 			}
 
@@ -134,7 +133,7 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 							await auth.updateUser(uid, {
 								photoURL,
 								email: user.email,
-								displayName: user.username
+								displayName: user.username,
 							});
 						} catch (_e) {
 							if ((<any>_e).code === 'auth/user-not-found') {
@@ -142,13 +141,13 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 									uid,
 									photoURL,
 									email: user.email,
-									displayName: user.username
+									displayName: user.username,
 								});
 							}
 						}
 
 						token = await auth.createCustomToken(uid, {
-							locale: user.locale
+							locale: user.locale,
 						});
 					} catch (error) {
 						console.error(error);
@@ -191,13 +190,16 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 		try {
 			const decodedIdToken = await auth.verifyIdToken(idToken);
 			// Only process if the user just signed in in the last 5 minutes.
-			if (new Date().getTime() / 1000 - decodedIdToken.auth_time > 5 * 60) {
+			if (
+				new Date().getTime() / 1000 - decodedIdToken.auth_time >
+				5 * 60
+			) {
 				res.code(401);
 				throw 'Recent sign in required!';
 			}
 
 			await auth.setCustomUserClaims(decodedIdToken.uid, {
-				locale
+				locale,
 			});
 		} catch (error) {
 			console.error(error);
@@ -207,7 +209,7 @@ export const router: FastifyPluginAsync = async (app, opts) => {
 		const expiresIn = days * 60 * 60 * 24 * 1000;
 
 		const sessionCookie = await auth.createSessionCookie(idToken, {
-			expiresIn
+			expiresIn,
 		});
 
 		return { cookie: sessionCookie, expiresIn };
@@ -239,17 +241,17 @@ async function refreshSessionCookie(uid: string, expiresIn: number) {
 		{
 			method: 'POST',
 			headers: {
-				'content-type': 'application/json'
+				'content-type': 'application/json',
 			},
 			body: JSON.stringify({
 				token,
-				returnSecureToken: true
-			})
+				returnSecureToken: true,
+			}),
 		}
 	).then((r) => r.json());
 
 	const sessionCookie = await auth.createSessionCookie(res.idToken, {
-		expiresIn
+		expiresIn,
 	});
 
 	return sessionCookie;
